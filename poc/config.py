@@ -91,6 +91,24 @@ MODEL_TIER: dict = {
 SPRINT_CAPACITY_DEFAULT: int = 20
 SPRINT_DURATION_WEEKS: int = 2
 
+# ── Stage 4: AI-Assisted Development ─────────────────────────────────────────
+# ANTHROPIC_API_KEY is passed through to the `claude` CLI subprocess so it can
+# authenticate against the Anthropic API. Must be set in poc/.env.
+ANTHROPIC_API_KEY: str = os.environ.get("ANTHROPIC_API_KEY", "")
+
+# Root directory for per-task Claude Code workspaces. Each task gets an
+# isolated subdirectory at {STAGE4_WORKSPACE_ROOT}/{task_id}/.
+_BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+STAGE4_WORKSPACE_ROOT: str = os.path.join(_BASE_DIR, "workspaces")
+
+# Maximum concurrent Claude CLI processes. Keep low to avoid exhausting
+# Anthropic API rate limits during parallel task execution.
+STAGE4_MAX_PARALLEL: int = int(os.environ.get("STAGE4_MAX_PARALLEL", "2"))
+
+# Per-task timeout in seconds. Claude CLI is killed and the session marked
+# failed if it doesn't complete within this window.
+STAGE4_CLAUDE_TIMEOUT_S: int = int(os.environ.get("STAGE4_CLAUDE_TIMEOUT_S", "300"))
+
 # SDLC topic taxonomy used for requirement classification
 SDLC_TOPICS: list[str] = [
     "requirements",     # functional requirements, features, user needs, scope

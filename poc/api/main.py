@@ -9,10 +9,10 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from api.routes import clarifications, documents, docs, epics, metrics, projects, requirements, sprints, stitch
+from api.routes import clarifications, documents, docs, epics, metrics, projects, requirements, sprints, stage4, stitch
 
 app = FastAPI(
-    title="StackForge POC — Stages 1–3: Requirement Ingestion, Epic Generation & Sprint Planning",
+    title="StackForge POC — Stages 1–4: Requirement Ingestion → AI-Assisted Development",
     description=(
         "Ingests client documents (SOW, transcripts), extracts structured requirements, "
         "generates clarification questions, and provides hybrid RAG search."
@@ -36,6 +36,7 @@ app.include_router(stitch.router)
 app.include_router(epics.router)
 app.include_router(sprints.router)
 app.include_router(metrics.router)
+app.include_router(stage4.router)
 
 
 @app.get("/health")

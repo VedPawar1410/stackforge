@@ -758,7 +758,7 @@ render_hero()
 
 # ─── Tab layout ───────────────────────────────────────────────────────────────
 
-tab_setup, tab_upload, tab_review, tab_docs, tab_clarify, tab_epics, tab_sprints = st.tabs([
+tab_setup, tab_upload, tab_review, tab_docs, tab_clarify, tab_epics, tab_sprints, tab_stage4 = st.tabs([
     "🏗️  Setup",
     "📂  Upload",
     "📋  Requirements",
@@ -766,6 +766,7 @@ tab_setup, tab_upload, tab_review, tab_docs, tab_clarify, tab_epics, tab_sprints
     "💬  Clarifications",
     "🗂️  Epics & Stories",
     "🏃  Sprint Plan",
+    "🤖  AI Dev (Stage 4)",
 ])
 
 
@@ -2199,4 +2200,251 @@ with tab_sprints:
             render_metrics_panel(
                 s3_metrics, STAGE3_OPTIMIZATIONS,
                 "vs naive all-Opus approach (no routing, no scoping)",
+            )
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# Tab 8: Stage 4 — AI-Assisted Development
+# ═══════════════════════════════════════════════════════════════════════════════
+
+SESSION_STATUS_COLOR = {
+    "completed": "#00d4aa",
+    "running":   "#4f8ef7",
+    "failed":    "#f43f5e",
+    "pending":   "#4a5070",
+}
+
+with tab_stage4:
+    st.markdown('<div class="sf-section-header">AI-Assisted Development</div>', unsafe_allow_html=True)
+    st.caption("Claude Code agents implement each task in an isolated workspace. Phase 1: Python runner · Phase 2: daemon pattern.")
+
+    project_id = st.session_state.get("project_id")
+    if not project_id:
+        st.info("Select or create a project in the Setup tab first.")
+    else:
+        s4 = cached_get(f"/projects/{project_id}/stage4-status") or {}
+        s4_status    = s4.get("status", "idle")
+        total_tasks  = s4.get("total_tasks", 0)
+        completed    = s4.get("completed", 0)
+        failed       = s4.get("failed", 0)
+        in_progress  = s4.get("in_progress", 0)
+
+        # ── Action bar ────────────────────────────────────────────────────────
+        top_left, top_right = st.columns([3, 1])
+
+        with top_right:
+            with st.expander("⚙️ Config"):
+                # Sprint selector: fetch sprint list if Stage 3 is ready
+                sprints_list = cached_get(f"/projects/{project_id}/sprints") or []
+                sprint_options = {"All Sprints": None}
+                for sp in sprints_list:
+                    sprint_options[sp["name"]] = str(sp["id"])
+                selected_sprint_name = st.selectbox(
+                    "Run for sprint",
+                    options=list(sprint_options.keys()),
+                    key="s4_sprint_select",
+                )
+                selected_sprint_id = sprint_options[selected_sprint_name]
+
+                max_par = st.slider(
+                    "Max parallel agents", min_value=1, max_value=4, value=2,
+                    help="Concurrent Claude Code processes. Keep ≤2 to stay within Anthropic rate limits.",
+                )
+
+            btn_label = "⚡ Run Stage 4" if s4_status in ("idle", "failed") else "🔄 Re-run Stage 4"
+            if st.button(btn_label, key="btn_s4_run", type="primary", use_container_width=True):
+                url = f"/projects/{project_id}/run-stage4?max_parallel={max_par}"
+                if selected_sprint_id:
+                    url += f"&sprint_id={selected_sprint_id}"
+                result = api_post(url)
+                if result:
+                    invalidate_cache(
+                        f"/projects/{project_id}/stage4-status",
+                        f"/projects/{project_id}/task-sessions",
+                        f"/projects/{project_id}/stage4-metrics",
+                    )
+                    st.rerun()
+
+            if s4_status == "generating":
+                if st.button("↻ Refresh", key="btn_s4_refresh", use_container_width=True):
+                    invalidate_cache(
+                        f"/projects/{project_id}/stage4-status",
+                        f"/projects/{project_id}/task-sessions",
+                    )
+                    st.rerun()
+
+        with top_left:
+            m1, m2, m3, m4 = st.columns(4)
+            status_color = SESSION_STATUS_COLOR.get(s4_status, "#4a5070")
+            m1.markdown(
+                f'<div class="sf-metric">'
+                f'  <div class="sf-metric-value" style="color:{status_color};font-size:1rem;">'
+                f'    {s4_status.upper()}'
+                f'  </div>'
+                f'  <div class="sf-metric-label">Status</div>'
+                f'</div>',
+                unsafe_allow_html=True,
+            )
+            m2.markdown(
+                f'<div class="sf-metric">'
+                f'  <div class="sf-metric-value">{total_tasks}</div>'
+                f'  <div class="sf-metric-label">Total Tasks</div>'
+                f'</div>',
+                unsafe_allow_html=True,
+            )
+            m3.markdown(
+                f'<div class="sf-metric">'
+                f'  <div class="sf-metric-value" style="color:#00d4aa;">{completed}</div>'
+                f'  <div class="sf-metric-label">Completed</div>'
+                f'</div>',
+                unsafe_allow_html=True,
+            )
+            m4.markdown(
+                f'<div class="sf-metric">'
+                f'  <div class="sf-metric-value" style="color:#f43f5e;">{failed}</div>'
+                f'  <div class="sf-metric-label">Failed</div>'
+                f'</div>',
+                unsafe_allow_html=True,
+            )
+
+        # ── State banners ──────────────────────────────────────────────────────
+        if s4_status == "generating":
+            done_of = f"{completed}/{total_tasks}" if total_tasks else "…"
+            st.markdown(
+                f'<div style="margin-top:12px;padding:12px 16px;background:#1a1d2e;'
+                f'border:1px solid #2e3250;border-radius:10px;color:#4f8ef7;font-size:0.85rem;">'
+                f'⏳ Claude Code agents running… {done_of} tasks complete. '
+                f'Click Refresh to check progress.'
+                f'</div>',
+                unsafe_allow_html=True,
+            )
+
+        elif s4_status == "failed":
+            st.error("Stage 4 run failed. Check the API server logs, then try re-running.")
+
+        # ── Session results ────────────────────────────────────────────────────
+        if s4_status in ("ready", "generating", "failed") and completed > 0:
+            sessions = cached_get(f"/projects/{project_id}/task-sessions") or []
+
+            st.divider()
+            st.markdown('<div class="sf-section-header">Task Sessions</div>', unsafe_allow_html=True)
+
+            for sess in sessions:
+                sess_status = sess.get("status", "pending")
+                sess_color  = SESSION_STATUS_COLOR.get(sess_status, "#4a5070")
+                dur_ms      = sess.get("duration_ms") or 0
+                dur_s       = round(dur_ms / 1000, 1)
+                file_count  = sess.get("file_count", 0)
+                tt          = sess.get("task_type", "backend")
+                type_icon, type_color = TASK_TYPE_META.get(tt, ("⚙️", "#4f8ef7"))
+
+                expander_label = (
+                    f"{type_icon} {sess['task_title']}  "
+                    f"·  {sess_status.upper()}  "
+                    f"·  {dur_s}s  "
+                    f"·  {file_count} file(s)"
+                )
+
+                with st.expander(expander_label, expanded=False):
+                    # Status pill + type badge
+                    st.markdown(
+                        f'<div style="display:flex;gap:8px;margin-bottom:10px;">'
+                        f'  <span class="sf-badge" style="background:rgba(255,255,255,0.05);'
+                        f'    color:{sess_color};border:1px solid {sess_color}33;">'
+                        f'    {sess_status.upper()}'
+                        f'  </span>'
+                        f'  <span class="sf-badge" style="background:rgba(255,255,255,0.05);'
+                        f'    color:{type_color};border:1px solid {type_color}33;">'
+                        f'    {type_icon} {tt}'
+                        f'  </span>'
+                        f'  <span style="font-size:0.75rem;color:#8b92a5;line-height:1.8;">'
+                        f'    {dur_s}s wall-clock'
+                        f'  </span>'
+                        f'</div>',
+                        unsafe_allow_html=True,
+                    )
+
+                    if sess_status == "completed":
+                        # Fetch full detail (summary + files)
+                        task_id = str(sess.get("task_id", ""))
+                        detail = cached_get(f"/projects/{project_id}/task-sessions/{task_id}")
+
+                        if detail and detail.get("session_summary"):
+                            st.markdown("**Claude's summary:**")
+                            st.markdown(
+                                f'<div style="background:#1a1d2e;border:1px solid #2e3250;'
+                                f'border-radius:8px;padding:12px 16px;font-size:0.82rem;'
+                                f'color:#c8cfe0;white-space:pre-wrap;">'
+                                f'{detail["session_summary"]}'
+                                f'</div>',
+                                unsafe_allow_html=True,
+                            )
+
+                        if detail and detail.get("generated_files"):
+                            st.markdown("**Generated files:**")
+                            for f_info in detail["generated_files"]:
+                                size_kb = round(f_info.get("size_bytes", 0) / 1024, 1)
+                                size_str = f"{size_kb} KB" if size_kb >= 0.1 else f"{f_info.get('size_bytes', 0)} B"
+                                st.markdown(
+                                    f'<div style="display:flex;justify-content:space-between;'
+                                    f'padding:4px 8px;background:rgba(255,255,255,0.02);'
+                                    f'border-radius:4px;margin-bottom:2px;">'
+                                    f'  <span style="font-family:monospace;font-size:0.78rem;color:#a78bfa;">'
+                                    f'    📄 {f_info["path"]}'
+                                    f'  </span>'
+                                    f'  <span style="font-size:0.72rem;color:#4a5070;">{size_str}</span>'
+                                    f'</div>',
+                                    unsafe_allow_html=True,
+                                )
+
+                    elif sess_status == "failed":
+                        task_id = str(sess.get("task_id", ""))
+                        detail = cached_get(f"/projects/{project_id}/task-sessions/{task_id}")
+                        if detail and detail.get("error_message"):
+                            st.error(f"Error: {detail['error_message']}")
+
+            # ── Timing metrics panel ───────────────────────────────────────────
+            st.divider()
+            st.markdown('<div class="sf-section-header">Execution Report</div>', unsafe_allow_html=True)
+
+            s4_metrics = cached_get(f"/projects/{project_id}/stage4-metrics") or {}
+            total_dur_s = round(s4_metrics.get("total_duration_ms", 0) / 1000, 1)
+            avg_dur_s   = round(s4_metrics.get("avg_duration_ms", 0) / 1000, 1)
+            s4_comp     = s4_metrics.get("completed", 0)
+            s4_fail     = s4_metrics.get("failed", 0)
+
+            em1, em2, em3, em4 = st.columns(4)
+            em1.markdown(
+                f'<div class="sf-metric">'
+                f'  <div class="sf-metric-value" style="color:#00d4aa;">{s4_comp}</div>'
+                f'  <div class="sf-metric-label">Completed</div>'
+                f'</div>',
+                unsafe_allow_html=True,
+            )
+            em2.markdown(
+                f'<div class="sf-metric">'
+                f'  <div class="sf-metric-value" style="color:#f43f5e;">{s4_fail}</div>'
+                f'  <div class="sf-metric-label">Failed</div>'
+                f'</div>',
+                unsafe_allow_html=True,
+            )
+            em3.markdown(
+                f'<div class="sf-metric">'
+                f'  <div class="sf-metric-value">{total_dur_s}s</div>'
+                f'  <div class="sf-metric-label">Total Time</div>'
+                f'</div>',
+                unsafe_allow_html=True,
+            )
+            em4.markdown(
+                f'<div class="sf-metric">'
+                f'  <div class="sf-metric-value">{avg_dur_s}s</div>'
+                f'  <div class="sf-metric-label">Avg per Task</div>'
+                f'</div>',
+                unsafe_allow_html=True,
+            )
+
+            st.caption(
+                "📌 Phase 1: timing metrics only. "
+                "Token counts will be available in Phase 2 when the daemon streams "
+                "Claude Code events back to the backend."
             )

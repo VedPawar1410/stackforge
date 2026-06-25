@@ -13,6 +13,9 @@ env/
 # StackForge generated output (SDLC docs per project — runtime artifacts)
 output/
 
+# Stage 4: per-task Claude Code workspaces (generated at runtime, not committed)
+workspaces/
+
 # IDE
 .vscode/
 .idea/

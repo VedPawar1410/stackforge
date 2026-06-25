@@ -254,6 +254,48 @@ class Stage3MetricsResponse(BaseModel):
     steps: list[MetricsStep]
 
 
+# ─── Stage 4: AI-Assisted Development ───────────────────────────────────────
+
+class TaskSessionSummary(BaseModel):
+    """Lightweight session row for the list endpoint."""
+    id: UUID
+    task_id: UUID
+    task_title: str
+    task_type: str
+    status: str                          # pending | running | completed | failed
+    duration_ms: Optional[int] = None
+    file_count: int = 0
+    started_at: datetime
+    completed_at: Optional[datetime] = None
+
+
+class TaskSessionDetail(TaskSessionSummary):
+    """Full session detail including Claude's output and generated file list."""
+    session_summary: Optional[str] = None
+    generated_files: list[dict] = []    # [{path, size_bytes}]
+    error_message: Optional[str] = None
+    workspace_path: Optional[str] = None
+
+
+class Stage4StatusResponse(BaseModel):
+    status: str                          # idle | generating | ready | failed
+    total_tasks: int
+    completed: int
+    failed: int
+    in_progress: int
+
+
+class Stage4MetricsResponse(BaseModel):
+    total_tasks: int
+    completed: int
+    failed: int
+    in_progress: int
+    total_duration_ms: int
+    avg_duration_ms: int
+    tokens_available: bool = False       # always False in Phase 1
+    task_breakdown: list[dict]
+
+
 # ─── Google Stitch ────────────────────────────────────────────────────────────
 
 class StitchGenerateResponse(BaseModel):
