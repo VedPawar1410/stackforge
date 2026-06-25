@@ -22,8 +22,8 @@ if LLM_PROVIDER == "openrouter":
 else:  # groq
     LLM_API_KEY = GROQ_API_KEY
     LLM_BASE_URL = "https://api.groq.com/openai/v1"
-    MODEL_CHEAP = "llama-3.1-8b-instant"
-    MODEL_CAPABLE = "llama-3.3-70b-versatile"
+    MODEL_CHEAP   = "openai/gpt-oss-20b"    # replaces deprecated llama-3.1-8b-instant
+    MODEL_CAPABLE = "openai/gpt-oss-120b"   # replaces deprecated llama-3.3-70b-versatile
 
 # Chunking
 CHUNK_TARGET_WORDS: int = 275  # target ~250-300 words per chunk
@@ -81,8 +81,11 @@ PRICING: dict = {
 
 # Map Groq model names → Anthropic pricing tier for cost calculations
 MODEL_TIER: dict = {
-    MODEL_CHEAP:   "haiku",   # llama-3.1-8b-instant  → haiku tier
-    MODEL_CAPABLE: "sonnet",  # llama-3.3-70b-versatile → sonnet tier
+    "openai/gpt-oss-20b":   "haiku",    # cheap tier → haiku pricing
+    "openai/gpt-oss-120b":  "sonnet",   # capable tier → sonnet pricing
+    # OpenRouter fallback entries (keep in sync if switching providers)
+    "meta-llama/llama-3.1-8b-instruct:free": "haiku",
+    "meta-llama/llama-3.3-70b-instruct":     "sonnet",
 }
 
 # ── Stage 3: Sprint & Task Planning ──────────────────────────────────────────
@@ -92,22 +95,19 @@ SPRINT_CAPACITY_DEFAULT: int = 20
 SPRINT_DURATION_WEEKS: int = 2
 
 # ── Stage 4: AI-Assisted Development ─────────────────────────────────────────
-# ANTHROPIC_API_KEY is passed through to the `claude` CLI subprocess so it can
-# authenticate against the Anthropic API. Must be set in poc/.env.
-ANTHROPIC_API_KEY: str = os.environ.get("ANTHROPIC_API_KEY", "")
-
-# Root directory for per-task Claude Code workspaces. Each task gets an
-# isolated subdirectory at {STAGE4_WORKSPACE_ROOT}/{task_id}/.
+# Root directory for per-task workspaces. Each task gets an isolated
+# subdirectory at {STAGE4_WORKSPACE_ROOT}/{task_id}/.
 _BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 STAGE4_WORKSPACE_ROOT: str = os.path.join(_BASE_DIR, "workspaces")
 
-# Maximum concurrent Claude CLI processes. Keep low to avoid exhausting
-# Anthropic API rate limits during parallel task execution.
-STAGE4_MAX_PARALLEL: int = int(os.environ.get("STAGE4_MAX_PARALLEL", "2"))
+# Maximum concurrent Groq code-gen calls. Default 1 — Groq free tier caps at
+# 8K TPM and each Stage 4 call uses ~2800 tokens, so Semaphore(1) + 30s hold
+# keeps us at ~5600 TPM which is safely under the limit.
+STAGE4_MAX_PARALLEL: int = int(os.environ.get("STAGE4_MAX_PARALLEL", "1"))
 
-# Per-task timeout in seconds. Claude CLI is killed and the session marked
-# failed if it doesn't complete within this window.
-STAGE4_CLAUDE_TIMEOUT_S: int = int(os.environ.get("STAGE4_CLAUDE_TIMEOUT_S", "300"))
+# Seconds to hold the semaphore slot after each Groq call completes. This
+# spreads releases across time so concurrent waiters don't burst the TPM window.
+STAGE4_THROTTLE_DELAY_S: float = float(os.environ.get("STAGE4_THROTTLE_DELAY_S", "30.0"))
 
 # SDLC topic taxonomy used for requirement classification
 SDLC_TOPICS: list[str] = [

@@ -292,7 +292,9 @@ class Stage4MetricsResponse(BaseModel):
     in_progress: int
     total_duration_ms: int
     avg_duration_ms: int
-    tokens_available: bool = False       # always False in Phase 1
+    tokens_available: bool = True        # Groq API exposes real token counts
+    actual_input_tokens: int = 0
+    actual_output_tokens: int = 0
     task_breakdown: list[dict]
 
 

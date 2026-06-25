@@ -2413,6 +2413,9 @@ with tab_stage4:
             s4_comp     = s4_metrics.get("completed", 0)
             s4_fail     = s4_metrics.get("failed", 0)
 
+            in_tok  = s4_metrics.get("actual_input_tokens", 0)
+            out_tok = s4_metrics.get("actual_output_tokens", 0)
+
             em1, em2, em3, em4 = st.columns(4)
             em1.markdown(
                 f'<div class="sf-metric">'
@@ -2443,8 +2446,19 @@ with tab_stage4:
                 unsafe_allow_html=True,
             )
 
-            st.caption(
-                "📌 Phase 1: timing metrics only. "
-                "Token counts will be available in Phase 2 when the daemon streams "
-                "Claude Code events back to the backend."
-            )
+            if in_tok or out_tok:
+                tk1, tk2 = st.columns(2)
+                tk1.markdown(
+                    f'<div class="sf-metric">'
+                    f'  <div class="sf-metric-value">{in_tok:,}</div>'
+                    f'  <div class="sf-metric-label">Input Tokens</div>'
+                    f'</div>',
+                    unsafe_allow_html=True,
+                )
+                tk2.markdown(
+                    f'<div class="sf-metric">'
+                    f'  <div class="sf-metric-value">{out_tok:,}</div>'
+                    f'  <div class="sf-metric-label">Output Tokens</div>'
+                    f'</div>',
+                    unsafe_allow_html=True,
+                )

@@ -1,12 +1,11 @@
 """
 Stage 4 metrics report.
 
-Phase 1: timing-only (no token data — claude CLI doesn't expose usage).
-Returns a structure compatible with the UI's metrics panel, with
-tokens_available=False so the UI can show a "Phase 1" notice instead
-of zero-value token columns.
+Groq-based: real token counts are available from task_usage.
+tokens_available=True so the UI shows actual input/output token totals.
 """
 
+import json
 import logging
 
 from db import DB
@@ -20,15 +19,17 @@ def get_metrics_report(project_id: str) -> dict:
 
     Returns:
         {
-          total_tasks:       int,
-          completed:         int,
-          failed:            int,
-          in_progress:       int,
-          total_duration_ms: int,   -- sum across all completed sessions
-          avg_duration_ms:   int,   -- mean per completed session
-          tokens_available:  bool,  -- always False in Phase 1
+          total_tasks:          int,
+          completed:            int,
+          failed:               int,
+          in_progress:          int,
+          total_duration_ms:    int,
+          avg_duration_ms:      int,
+          tokens_available:     bool,   -- True (Groq API exposes usage)
+          actual_input_tokens:  int,
+          actual_output_tokens: int,
           task_breakdown: [
-            {task_title, task_type, status, duration_ms, file_count}
+            {task_title, task_type, status, duration_ms, file_count, error}
           ]
         }
     """
@@ -52,17 +53,28 @@ def get_metrics_report(project_id: str) -> dict:
             (project_id,),
         )
 
-        # Also count tasks that have no session yet (not started)
         total_row = db.fetch_one(
             "SELECT COUNT(*) AS cnt FROM tasks WHERE project_id = %s",
             (project_id,),
         )
 
+        usage_row = db.fetch_one(
+            """
+            SELECT COALESCE(SUM(input_tokens), 0)  AS total_in,
+                   COALESCE(SUM(output_tokens), 0) AS total_out
+            FROM task_usage
+            WHERE project_id = %s AND stage = '4'
+            """,
+            (project_id,),
+        )
+
     total_tasks = int(total_row["cnt"]) if total_row else 0
+    actual_input_tokens  = int(usage_row["total_in"])  if usage_row else 0
+    actual_output_tokens = int(usage_row["total_out"]) if usage_row else 0
 
     completed = sum(1 for s in sessions if s["status"] == "completed")
-    failed = sum(1 for s in sessions if s["status"] == "failed")
-    running = sum(1 for s in sessions if s["status"] == "running")
+    failed    = sum(1 for s in sessions if s["status"] == "failed")
+    running   = sum(1 for s in sessions if s["status"] == "running")
 
     completed_durations = [
         int(s["duration_ms"] or 0)
@@ -70,7 +82,7 @@ def get_metrics_report(project_id: str) -> dict:
         if s["status"] == "completed" and s["duration_ms"] is not None
     ]
     total_duration_ms = sum(completed_durations)
-    avg_duration_ms = (
+    avg_duration_ms   = (
         total_duration_ms // len(completed_durations) if completed_durations else 0
     )
 
@@ -78,29 +90,30 @@ def get_metrics_report(project_id: str) -> dict:
     for s in sessions:
         files = s.get("generated_files") or []
         if isinstance(files, str):
-            import json
             try:
                 files = json.loads(files)
             except Exception:
                 files = []
         breakdown.append(
             {
-                "task_title":   s["task_title"],
-                "task_type":    s["task_type"] or "backend",
-                "status":       s["status"],
-                "duration_ms":  int(s["duration_ms"] or 0),
-                "file_count":   len(files),
-                "error":        s.get("error_message") or "",
+                "task_title":  s["task_title"],
+                "task_type":   s["task_type"] or "backend",
+                "status":      s["status"],
+                "duration_ms": int(s["duration_ms"] or 0),
+                "file_count":  len(files),
+                "error":       s.get("error_message") or "",
             }
         )
 
     return {
-        "total_tasks":       total_tasks,
-        "completed":         completed,
-        "failed":            failed,
-        "in_progress":       running,
-        "total_duration_ms": total_duration_ms,
-        "avg_duration_ms":   avg_duration_ms,
-        "tokens_available":  False,
-        "task_breakdown":    breakdown,
+        "total_tasks":          total_tasks,
+        "completed":            completed,
+        "failed":               failed,
+        "in_progress":          running,
+        "total_duration_ms":    total_duration_ms,
+        "avg_duration_ms":      avg_duration_ms,
+        "tokens_available":     True,
+        "actual_input_tokens":  actual_input_tokens,
+        "actual_output_tokens": actual_output_tokens,
+        "task_breakdown":       breakdown,
     }
