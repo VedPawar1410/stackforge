@@ -121,9 +121,18 @@ poc/output/{project_id}/stitch/
 
 ### Stage 3 — Sprint & Task Planning
 
-- Only send stories for the current sprint window. Never send the full backlog.
-- Estimation uses RAG: retrieve the 3 most similar past user stories + their actual completion times from the Stage 6 knowledge base. Pass as context. More accurate than generating estimates from scratch, and cheaper.
-- This stage's RAG retrieval queries the same KB that Stage 6 populates — self-referential and self-improving across sprints.
+- **Step A: Sprint assignment — zero LLM cost.** `sprint_planner.py` uses a greedy first-fit-decreasing bin-packing algorithm. Stories sorted descending by points, packed into sprint buckets up to `sprint_capacity` (default 20 pts). Deterministic and $0. Logged as a 0-token step in `stage3_metrics` to make the zero cost explicit in the savings report.
+- **Step B: Task decomposition — capable model only.** `task_generator.py` calls the mid-tier model (Sonnet) per story, in parallel via `asyncio.gather`. Each call receives only that story's title, description, and ACs (~200–300 tokens) + top-3 BM25 RAG hits (~300 tokens) = ~600 tokens total. A naive approach (Opus + full backlog context) would cost ~96% more per call.
+- **RAG context injection:** `hybrid_search()` retrieves top-3 similar project chunks before each task generation call. Free (no LLM cost), gives the model calibration context for estimation. Simulates Stage 6 KB retrieval before Stage 6 exists.
+- **Strict JSON schema + 1000 max_tokens cap** per story. 3–5 tasks per story enforced. Fields: `title`, `description`, `task_type` (backend/frontend/testing/devops/design/documentation), `estimated_hours` (0.5–16.0 range).
+- **Groq TPM throttle:** `Semaphore(2)` + 15s post-call hold. Groq free tier caps at 12K TPM on llama-3.3-70b. This keeps calls under the limit with exponential backoff on 429s.
+- **ADO push:** `push_to_ado_stage3()` in `stage3_runner.py` creates ADO **Iterations** from sprints (via `ensure_iteration_path()`) and **Task** work items linked to their parent User Story's ADO URL. Idempotent — skips already-pushed items. Tasks without a pushed parent story push standalone with a warning.
+- **Metrics:** All LLM calls logged to `stage3_metrics` table. `stage3_metrics_calculator.py` compares actual cost against naive baseline (Opus + all stories in one call + prose output). Savings report exposed via `GET /projects/{id}/stage3-metrics`.
+- **Stage 3 status on `projects`:** `stage3_status` column (`idle → generating → ready | failed`). Poll via `GET /projects/{id}/stage3-status`.
+
+**POC status: built and validated.** Sprints and tasks generated from MediBook stories, pushed to ADO as Iterations + Task work items. Metrics calculator shows >90% cost savings vs naive Opus approach.
+
+**Note on future RAG:** Currently BM25 retrieves from the project's own Stage 1 rag_chunks as a proxy. In production, Stage 3 retrieves from the Stage 6 KB (past sprint completion times + similar stories across all projects). This makes estimation self-improving across sprint history — the current POC simulates this pattern without a separate historical store.
 
 ### Stage 4 — AI-Assisted Development (Multica)
 
@@ -325,7 +334,9 @@ poc/
 │   ├── seed.py               # Creates demo client/project; writes sample docs to sample_docs/
 │   ├── migrate_stage2.py     # One-time migration to apply stage2.sql
 │   ├── migrate_metrics.py    # One-time migration to apply stage1_metrics.sql
-│   └── migrate_key_specifics.py  # One-time migration: adds key_specifics + status cols to requirements
+│   ├── migrate_key_specifics.py  # One-time migration: adds key_specifics + status cols to requirements
+│   ├── stage3.sql            # Stage 3 schema: sprints, sprint_stories, tasks, stage3_metrics + stage3_status on projects
+│   └── migrate_stage3.py     # One-time migration to apply stage3.sql
 ├── pipeline/
 │   ├── llm_utils.py          # LLM client factory + retry: get_llm_client(), call_with_retry(), extract_usage()
 │   │                         # Single import point for all pipeline LLM calls — do not instantiate AsyncOpenAI directly
@@ -347,10 +358,14 @@ poc/
 │   ├── epic_generator.py     # Stage 2 step 1: cheap model, requirement titles only → epic themes JSON
 │   ├── story_generator.py    # Stage 2 step 2: mid model, per-epic scoped context, parallel via asyncio.gather
 │   ├── stage2_runner.py      # Stage 2 orchestration: epic gen → story gen → DB insert → optional ADO push
-│   ├── ado_client.py         # ADO REST API v7.1: create Epic/User Story, auto-create area path
+│   ├── ado_client.py         # ADO REST API v7.1: create Epic/User Story/Task, ensure_area_path, ensure_iteration_path
 │   ├── metrics_calculator.py # Stage 2 actual vs naive cost comparison at Anthropic pricing rates
 │   ├── stitch_designer.py    # Google Stitch MCP: extract screens → create project → generate HTML screens
-│   └── workspace_prep.py     # Multica workspace prep: inject Stitch design assets before agent spawns
+│   ├── workspace_prep.py     # Multica workspace prep: inject Stitch design assets before agent spawns
+│   ├── sprint_planner.py     # Stage 3 step A: greedy first-fit-decreasing bin-packing → sprint list (0 LLM calls)
+│   ├── task_generator.py     # Stage 3 step B: capable model, per-story task decomposition, parallel + throttled
+│   ├── stage3_runner.py      # Stage 3 orchestration: sprint_planner → DB insert → task_generator → DB insert → ADO push
+│   └── stage3_metrics_calculator.py  # Stage 3 token savings report vs naive Opus baseline (get_metrics_report)
 ├── rag/
 │   ├── search.py             # BM25 + optional Pinecone semantic search over rag_chunks
 │   ├── reranker.py           # Returns top RERANK_TOP_K hits (cross-encoder when available)
@@ -367,7 +382,9 @@ poc/
 │       ├── docs.py           # SDLC document read/edit endpoints
 │       ├── epics.py          # Stage 2: generate, status, list epics/stories, push to ADO, metrics
 │       ├── metrics.py        # GET /projects/{id}/stage1-metrics — Stage 1 token savings report
-│       └── stitch.py         # Stitch: trigger design gen, get status, list screens
+│       ├── stitch.py         # Stitch: trigger design gen, get status, list screens
+│       └── sprints.py        # Stage 3: generate-sprints, stage3-status, sprints list, sprint stories/tasks,
+│                             #          push-sprints-to-ado, stage3-metrics
 ├── scripts/
 │   ├── ado_bulk_delete.py    # Bulk delete ADO work items (dev/demo cleanup utility)
 │   └── debug_stitch.py       # Debug helper for Stitch MCP connection
@@ -386,8 +403,10 @@ poc/
 │           ├── metadata.json
 │           └── screens/      # HTML per screen from Stitch MCP
 └── ui/
-    └── app.py                # Streamlit 7-tab UI (Setup / Upload / Requirements / Clarifications & Query /
-                              #                     Documents / Epics & Stories / Stitch Designs)
+    └── app.py                # Streamlit 8-tab UI (Setup / Upload / Requirements / Documents /
+                              #                     Clarifications / Epics & Stories / Sprint Plan / Stitch Designs)
+                              #   Sprint Plan tab: capacity slider, generate button, sprint utilisation Plotly chart,
+                              #   per-sprint accordion (stories + task breakdown), ADO push, Stage 3 metrics panel
 ```
 
 **How to run:**
@@ -400,6 +419,7 @@ cd poc
 python db/migrate_stage2.py
 python db/migrate_metrics.py
 python db/migrate_key_specifics.py
+python db/migrate_stage3.py
 
 # 3. From poc/ directory — terminal demo (Stage 1 only)
 python run_demo.py
