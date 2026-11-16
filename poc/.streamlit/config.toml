@@ -1,0 +1,17 @@
+# Streamlit reads this when launched from poc/ (python -m streamlit run ui/app.py)
+[theme]
+base = "dark"
+primaryColor = "#818cf8"
+backgroundColor = "#0d1117"
+secondaryBackgroundColor = "#161b22"
+textColor = "#e6edf3"
+font = "sans serif"
+
+[client]
+toolbarMode = "minimal"   # hide Streamlit's Deploy button and developer menu
+
+[server]
+headless = true
+
+[browser]
+gatherUsageStats = false

@@ -21,7 +21,7 @@ sys.path.insert(0, HERE)
 
 from config import PRICING  # noqa: E402
 from db import DB  # noqa: E402
-from pipeline.metrics_common import tier_for_model  # noqa: E402
+from pipeline.cost_summary import price as _cost, stage_rows  # noqa: E402
 from score_requirements import score  # noqa: E402
 
 # Rates the June 2026 reports used, kept to show how much the old savings
@@ -31,18 +31,6 @@ JUNE_2026_PRICING = {
     "sonnet": {"input": 3.00, "output": 15.00},
     "opus": {"input": 15.00, "output": 75.00},
 }
-
-STAGE_TABLES = {"1": "stage1_metrics", "2": "stage2_metrics", "3": "stage3_metrics", "4": "task_usage"}
-
-
-def _cost(rows: list[dict], pricing: dict, force_tier: str | None = None) -> float:
-    total = 0.0
-    for r in rows:
-        p = pricing[force_tier or tier_for_model(r["model"])]
-        # completion tokens already include reasoning tokens, so in + out is the bill
-        total += r["input_tokens"] / 1e6 * p["input"] + r["output_tokens"] / 1e6 * p["output"]
-    return round(total, 4)
-
 
 def _stage4_code(project_id: str) -> dict:
     with DB() as db:
@@ -71,25 +59,21 @@ def _stage4_code(project_id: str) -> dict:
 
 def build(project_id: str) -> dict:
     stages = {}
+    for stage, rows in stage_rows(project_id).items():
+        if not rows:
+            continue
+        stages[stage] = {
+            "calls_recorded": len(rows),
+            "models": sorted({r["model"] for r in rows}),
+            "input_tokens": sum(r["input_tokens"] for r in rows),
+            "output_tokens": sum(r["output_tokens"] for r in rows),
+            "of_which_reasoning_tokens": sum(r["thinking_tokens"] or 0 for r in rows),
+            "cost_usd_routed": _cost(rows, PRICING),
+            "cost_usd_all_opus": _cost(rows, PRICING, force_tier="opus"),
+            "cost_usd_routed_june_2026_rates": _cost(rows, JUNE_2026_PRICING),
+            "cost_usd_all_opus_june_2026_rates": _cost(rows, JUNE_2026_PRICING, force_tier="opus"),
+        }
     with DB() as db:
-        for stage, table in STAGE_TABLES.items():
-            rows = db.fetch_all(
-                f"SELECT model, input_tokens, output_tokens, thinking_tokens FROM {table} WHERE project_id = %s",
-                (project_id,),
-            )
-            if not rows:
-                continue
-            stages[stage] = {
-                "calls_recorded": len(rows),
-                "models": sorted({r["model"] for r in rows}),
-                "input_tokens": sum(r["input_tokens"] for r in rows),
-                "output_tokens": sum(r["output_tokens"] for r in rows),
-                "of_which_reasoning_tokens": sum(r["thinking_tokens"] or 0 for r in rows),
-                "cost_usd_routed": _cost(rows, PRICING),
-                "cost_usd_all_opus": _cost(rows, PRICING, force_tier="opus"),
-                "cost_usd_routed_june_2026_rates": _cost(rows, JUNE_2026_PRICING),
-                "cost_usd_all_opus_june_2026_rates": _cost(rows, JUNE_2026_PRICING, force_tier="opus"),
-            }
         reqs = db.fetch_all(
             "SELECT title, description, key_specifics, status FROM requirements WHERE project_id = %s",
             (project_id,))

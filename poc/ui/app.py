@@ -42,7 +42,7 @@ TYPE_META = {
 TYPE_ORDER = ["functional", "non_functional", "constraint", "assumption"]
 
 SDLC_META = {
-    "requirements":     ("📋", "Requirements",    "#4f8ef7", "blue"),
+    "requirements":     ("📋", "Requirements",    "#818cf8", "blue"),
     "design":           ("🎨", "Design",           "#a78bfa", "violet"),
     "technical":        ("⚙️",  "Technical",        "#22d3ee", "blue"),
     "timeline":         ("📅", "Timeline",         "#34d399", "teal"),
@@ -62,7 +62,7 @@ TOPIC_LABELS_UI = {k: f"{v[0]} {v[1]}" for k, v in SDLC_META.items()}
 PRIORITY_STYLES = {
     "high":   ("rose",  "#f43f5e"),
     "medium": ("amber", "#f59e0b"),
-    "low":    ("teal",  "#00d4aa"),
+    "low":    ("teal",  "#3fb950"),
 }
 
 SDLC_COLORS_PLOTLY = {k: v[2] for k, v in SDLC_META.items()}
@@ -80,10 +80,10 @@ html, body, [class*="css"], .stMarkdown, .stText, p, div, span, label {
 /* ── Tab bar: pill style ───────────────────────────────────────────── */
 .stTabs [data-baseweb="tab-list"] {
     gap: 4px;
-    background: #1a1d2e;
+    background: #161b22;
     padding: 6px 8px;
     border-radius: 12px;
-    border: 1px solid #2e3250;
+    border: 1px solid #30363d;
     margin-bottom: 8px;
 }
 .stTabs [data-baseweb="tab"] {
@@ -91,13 +91,13 @@ html, body, [class*="css"], .stMarkdown, .stText, p, div, span, label {
     padding: 8px 18px;
     font-weight: 500;
     font-size: 0.875rem;
-    color: #8b92a5;
+    color: #8b949e;
     background: transparent;
     border: none;
     transition: all 0.15s ease;
 }
 .stTabs [aria-selected="true"] {
-    background: #4f8ef7 !important;
+    background: #818cf8 !important;
     color: #ffffff !important;
 }
 .stTabs [data-baseweb="tab-highlight"] { display: none; }
@@ -109,8 +109,8 @@ html, body, [class*="css"], .stMarkdown, .stText, p, div, span, label {
     align-items: center;
     justify-content: space-between;
     padding: 18px 28px;
-    background: linear-gradient(135deg, #1a1d2e 0%, #1e2240 60%, #1a2035 100%);
-    border: 1px solid #2e3250;
+    background: #161b22;
+    border: 1px solid #30363d;
     border-radius: 16px;
     margin-bottom: 20px;
 }
@@ -119,18 +119,18 @@ html, body, [class*="css"], .stMarkdown, .stText, p, div, span, label {
     font-size: 1.45rem;
     font-weight: 700;
     letter-spacing: -0.03em;
-    color: #e8eaf0;
+    color: #e6edf3;
     margin: 0;
 }
-.sf-hero-logo .accent { color: #4f8ef7; }
+.sf-hero-logo .accent { color: #818cf8; }
 .sf-hero-sub {
     font-size: 0.78rem;
-    color: #8b92a5;
+    color: #8b949e;
     margin-top: 3px;
 }
 .sf-hero-badge {
-    background: rgba(79,142,247,0.1);
-    border: 1px solid rgba(79,142,247,0.3);
+    background: rgba(129,140,248,0.1);
+    border: 1px solid rgba(129,140,248,0.3);
     border-radius: 8px;
     padding: 8px 14px;
     text-align: right;
@@ -139,32 +139,32 @@ html, body, [class*="css"], .stMarkdown, .stText, p, div, span, label {
     font-size: 0.65rem;
     text-transform: uppercase;
     letter-spacing: 0.08em;
-    color: #8b92a5;
+    color: #8b949e;
 }
 .sf-hero-badge-value {
     font-size: 0.9rem;
     font-weight: 600;
-    color: #4f8ef7;
+    color: #818cf8;
     margin-top: 2px;
 }
 
 /* ── Cards ─────────────────────────────────────────────────────────── */
 .sf-card {
-    background: #1a1d2e;
-    border: 1px solid #2e3250;
+    background: #161b22;
+    border: 1px solid #30363d;
     border-radius: 12px;
     padding: 16px 20px;
     margin-bottom: 10px;
     transition: border-color 0.15s ease;
 }
 .sf-card-active {
-    border-color: #4f8ef7 !important;
-    box-shadow: 0 0 0 1px rgba(79,142,247,0.15);
+    border-color: #818cf8 !important;
+    box-shadow: 0 0 0 1px rgba(129,140,248,0.15);
 }
 .sf-card-title {
     font-size: 0.9rem;
     font-weight: 500;
-    color: #e8eaf0;
+    color: #e6edf3;
     margin-bottom: 4px;
 }
 .sf-card-meta {
@@ -176,7 +176,7 @@ html, body, [class*="css"], .stMarkdown, .stText, p, div, span, label {
 }
 .sf-card-desc {
     font-size: 0.8rem;
-    color: #8b92a5;
+    color: #8b949e;
     line-height: 1.5;
     margin: 5px 0 8px;
 }
@@ -192,18 +192,18 @@ html, body, [class*="css"], .stMarkdown, .stText, p, div, span, label {
     letter-spacing: 0.02em;
     white-space: nowrap;
 }
-.sf-badge-blue   { background: rgba(79,142,247,0.12); color: #4f8ef7; border: 1px solid rgba(79,142,247,0.25); }
-.sf-badge-teal   { background: rgba(0,212,170,0.12);  color: #00d4aa; border: 1px solid rgba(0,212,170,0.25); }
+.sf-badge-blue   { background: rgba(129,140,248,0.12); color: #818cf8; border: 1px solid rgba(129,140,248,0.25); }
+.sf-badge-teal   { background: rgba(63,185,80,0.12);  color: #3fb950; border: 1px solid rgba(63,185,80,0.25); }
 .sf-badge-amber  { background: rgba(245,158,11,0.12); color: #f59e0b; border: 1px solid rgba(245,158,11,0.25); }
 .sf-badge-rose   { background: rgba(244,63,94,0.12);  color: #f43f5e; border: 1px solid rgba(244,63,94,0.25); }
 .sf-badge-violet { background: rgba(167,139,250,0.12);color: #a78bfa; border: 1px solid rgba(167,139,250,0.25); }
 .sf-badge-slate  { background: rgba(148,163,184,0.08);color: #94a3b8; border: 1px solid rgba(148,163,184,0.18); }
-.sf-badge-green  { background: rgba(0,212,170,0.12);  color: #00d4aa; border: 1px solid rgba(0,212,170,0.25); }
+.sf-badge-green  { background: rgba(63,185,80,0.12);  color: #3fb950; border: 1px solid rgba(63,185,80,0.25); }
 
 /* ── Metric tiles ───────────────────────────────────────────────────── */
 .sf-metric {
-    background: #1a1d2e;
-    border: 1px solid #2e3250;
+    background: #161b22;
+    border: 1px solid #30363d;
     border-radius: 10px;
     padding: 14px 16px;
     text-align: center;
@@ -211,12 +211,12 @@ html, body, [class*="css"], .stMarkdown, .stText, p, div, span, label {
 .sf-metric-value {
     font-size: 1.6rem;
     font-weight: 700;
-    color: #e8eaf0;
+    color: #e6edf3;
     line-height: 1.2;
 }
 .sf-metric-label {
     font-size: 0.68rem;
-    color: #8b92a5;
+    color: #8b949e;
     margin-top: 4px;
     text-transform: uppercase;
     letter-spacing: 0.06em;
@@ -229,8 +229,8 @@ html, body, [class*="css"], .stMarkdown, .stText, p, div, span, label {
     gap: 0;
     margin: 18px 0;
     padding: 16px 20px;
-    background: #1a1d2e;
-    border: 1px solid #2e3250;
+    background: #161b22;
+    border: 1px solid #30363d;
     border-radius: 12px;
 }
 .sf-step {
@@ -247,12 +247,12 @@ html, body, [class*="css"], .stMarkdown, .stText, p, div, span, label {
     left: 50%;
     width: 100%;
     height: 2px;
-    background: #2e3250;
+    background: #30363d;
     z-index: 0;
 }
 .sf-step:last-child::after { display: none; }
-.sf-step-done::after  { background: #00d4aa; }
-.sf-step-active::after { background: linear-gradient(90deg, #4f8ef7, #2e3250); }
+.sf-step-done::after  { background: #3fb950; }
+.sf-step-active::after { background: #161b22; }
 .sf-dot {
     width: 30px;
     height: 30px;
@@ -265,18 +265,18 @@ html, body, [class*="css"], .stMarkdown, .stText, p, div, span, label {
     position: relative;
     z-index: 1;
 }
-.sf-dot-done    { background: #00d4aa; color: #0f1117; }
-.sf-dot-active  { background: #4f8ef7; color: #fff; box-shadow: 0 0 0 4px rgba(79,142,247,0.2); }
-.sf-dot-pending { background: #2e3250; color: #4a5070; }
+.sf-dot-done    { background: #3fb950; color: #0f1117; }
+.sf-dot-active  { background: #818cf8; color: #fff; box-shadow: 0 0 0 4px rgba(129,140,248,0.2); }
+.sf-dot-pending { background: #30363d; color: #6e7681; }
 .sf-step-label {
     font-size: 0.65rem;
-    color: #8b92a5;
+    color: #8b949e;
     margin-top: 7px;
     text-align: center;
     white-space: nowrap;
 }
-.sf-step-done .sf-step-label    { color: #00d4aa; }
-.sf-step-active .sf-step-label  { color: #4f8ef7; }
+.sf-step-done .sf-step-label    { color: #3fb950; }
+.sf-step-active .sf-step-label  { color: #818cf8; }
 .sf-step-failed .sf-step-label  { color: #f43f5e; }
 .sf-dot-failed  { background: #f43f5e; color: #fff; }
 .sf-step-failed::after { background: rgba(244,63,94,0.3); }
@@ -287,19 +287,19 @@ html, body, [class*="css"], .stMarkdown, .stText, p, div, span, label {
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.1em;
-    color: #8b92a5;
+    color: #8b949e;
     padding-bottom: 8px;
-    border-bottom: 1px solid #2e3250;
+    border-bottom: 1px solid #30363d;
     margin-bottom: 14px;
 }
 
 /* ── Upload zone ────────────────────────────────────────────────────── */
 .sf-upload-zone {
-    border: 2px dashed #2e3250;
+    border: 2px dashed #30363d;
     border-radius: 12px;
     padding: 8px 16px 16px;
     margin-bottom: 16px;
-    background: #1a1d2e;
+    background: #161b22;
     transition: border-color 0.2s ease;
 }
 
@@ -308,8 +308,8 @@ html, body, [class*="css"], .stMarkdown, .stText, p, div, span, label {
 .sf-spinner {
     display: inline-block;
     width: 12px; height: 12px;
-    border: 2px solid #2e3250;
-    border-top-color: #4f8ef7;
+    border: 2px solid #30363d;
+    border-top-color: #818cf8;
     border-radius: 50%;
     animation: sf-spin 0.8s linear infinite;
     vertical-align: middle;
@@ -318,8 +318,8 @@ html, body, [class*="css"], .stMarkdown, .stText, p, div, span, label {
 
 /* ── Form container ─────────────────────────────────────────────────── */
 [data-testid="stForm"] {
-    background: #1a1d2e;
-    border: 1px solid #2e3250 !important;
+    background: #161b22;
+    border: 1px solid #30363d !important;
     border-radius: 12px !important;
     padding: 4px 8px !important;
 }
@@ -331,19 +331,19 @@ html, body, [class*="css"], .stMarkdown, .stText, p, div, span, label {
     transition: all 0.15s ease !important;
 }
 .stButton > button[kind="primary"] {
-    background: #4f8ef7 !important;
+    background: #818cf8 !important;
     border: none !important;
     color: #fff !important;
 }
 .stButton > button[kind="primary"]:hover {
     background: #3a7de8 !important;
-    box-shadow: 0 4px 14px rgba(79,142,247,0.3) !important;
+    box-shadow: 0 4px 14px rgba(129,140,248,0.3) !important;
     transform: translateY(-1px);
 }
 .stButton > button[kind="secondary"] {
     background: transparent !important;
-    border: 1px solid #2e3250 !important;
-    color: #8b92a5 !important;
+    border: 1px solid #30363d !important;
+    color: #8b949e !important;
 }
 
 /* ── Expanders — Streamlit 1.40+ layout fix ─────────────────────────── */
@@ -357,14 +357,14 @@ html, body, [class*="css"], .stMarkdown, .stText, p, div, span, label {
     justify-content: space-between !important;
     gap: 10px !important;
     padding: 10px 14px !important;
-    background: #1a1d2e !important;
-    border: 1px solid #2e3250 !important;
+    background: #161b22 !important;
+    border: 1px solid #30363d !important;
     border-radius: 8px !important;
     cursor: pointer !important;
     transition: border-color 0.15s ease !important;
 }
 [data-testid="stExpander"] details > summary:hover {
-    border-color: #4f8ef7 !important;
+    border-color: #818cf8 !important;
 }
 /* Remove the native browser triangle marker */
 [data-testid="stExpander"] details > summary::-webkit-details-marker {
@@ -377,7 +377,7 @@ html, body, [class*="css"], .stMarkdown, .stText, p, div, span, label {
     margin: 0 !important;
     font-size: 0.875rem !important;
     font-weight: 500 !important;
-    color: #e8eaf0 !important;
+    color: #e6edf3 !important;
     white-space: nowrap !important;
     overflow: hidden !important;
     text-overflow: ellipsis !important;
@@ -388,7 +388,7 @@ html, body, [class*="css"], .stMarkdown, .stText, p, div, span, label {
     flex: 0 0 auto !important;
     display: flex !important;
     align-items: center !important;
-    color: #8b92a5 !important;
+    color: #8b949e !important;
     transition: transform 0.15s ease !important;
 }
 /* Hide icon fallback text (renders when Material Symbols font is absent) */
@@ -400,7 +400,7 @@ html, body, [class*="css"], .stMarkdown, .stText, p, div, span, label {
     height: 20px !important;
     display: inline-block !important;
     line-height: 20px !important;
-    color: #8b92a5 !important;
+    color: #8b949e !important;
 }
 [data-testid="stExpander"] details[open] > summary svg,
 [data-testid="stExpander"] details[open] > summary [data-testid="stExpanderToggleIcon"] {
@@ -408,7 +408,7 @@ html, body, [class*="css"], .stMarkdown, .stText, p, div, span, label {
 }
 /* Content area */
 [data-testid="stExpander"] details > div {
-    border: 1px solid #2e3250 !important;
+    border: 1px solid #30363d !important;
     border-top: none !important;
     border-radius: 0 0 8px 8px !important;
     padding: 12px 14px !important;
@@ -416,9 +416,9 @@ html, body, [class*="css"], .stMarkdown, .stText, p, div, span, label {
 }
 
 /* ── Misc ───────────────────────────────────────────────────────────── */
-hr { border-color: #2e3250 !important; }
+hr { border-color: #30363d !important; }
 .stAlert { border-radius: 10px !important; }
-[data-testid="stMetricValue"] { color: #e8eaf0 !important; }
+[data-testid="stMetricValue"] { color: #e6edf3 !important; }
 """
 
 
@@ -565,24 +565,24 @@ def render_metrics_panel(metrics: dict, optimizations: list, baseline_label: str
 
     # ── Headline savings banner ────────────────────────────────────────────
     st.markdown(
-        f'<div class="sf-card" style="background:linear-gradient(135deg,rgba(0,212,170,0.06),rgba(79,142,247,0.06));'
-        f'border-color:rgba(0,212,170,0.25);padding:20px 24px;">'
+        f'<div class="sf-card" style="background: #161b22;'
+        f'border-color:rgba(63,185,80,0.25);padding:20px 24px;">'
         f'  <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px;">'
         f'    <div>'
-        f'      <div style="font-size:2rem;font-weight:700;color:#00d4aa;">{savings_pct:.0f}% cheaper</div>'
-        f'      <div style="font-size:0.8rem;color:#8b92a5;margin-top:2px;">{baseline_label}</div>'
+        f'      <div style="font-size:2rem;font-weight:700;color:#3fb950;">{savings_pct:.0f}% cheaper</div>'
+        f'      <div style="font-size:0.8rem;color:#8b949e;margin-top:2px;">{baseline_label}</div>'
         f'    </div>'
         f'    <div style="text-align:center;">'
-        f'      <div style="font-size:1.3rem;font-weight:600;color:#e8eaf0;">${actual:.4f}</div>'
-        f'      <div style="font-size:0.68rem;color:#8b92a5;text-transform:uppercase;letter-spacing:0.05em;">Actual cost</div>'
+        f'      <div style="font-size:1.3rem;font-weight:600;color:#e6edf3;">${actual:.4f}</div>'
+        f'      <div style="font-size:0.68rem;color:#8b949e;text-transform:uppercase;letter-spacing:0.05em;">Actual cost</div>'
         f'    </div>'
         f'    <div style="text-align:center;opacity:0.5;">'
-        f'      <div style="font-size:1.3rem;font-weight:600;color:#e8eaf0;text-decoration:line-through;">${naive:.4f}</div>'
-        f'      <div style="font-size:0.68rem;color:#8b92a5;text-transform:uppercase;letter-spacing:0.05em;">Naive Opus baseline</div>'
+        f'      <div style="font-size:1.3rem;font-weight:600;color:#e6edf3;text-decoration:line-through;">${naive:.4f}</div>'
+        f'      <div style="font-size:0.68rem;color:#8b949e;text-transform:uppercase;letter-spacing:0.05em;">Naive Opus baseline</div>'
         f'    </div>'
         f'    <div style="text-align:center;">'
-        f'      <div style="font-size:1.3rem;font-weight:600;color:#4f8ef7;">${naive - actual:.4f}</div>'
-        f'      <div style="font-size:0.68rem;color:#8b92a5;text-transform:uppercase;letter-spacing:0.05em;">Cost saved</div>'
+        f'      <div style="font-size:1.3rem;font-weight:600;color:#818cf8;">${naive - actual:.4f}</div>'
+        f'      <div style="font-size:0.68rem;color:#8b949e;text-transform:uppercase;letter-spacing:0.05em;">Cost saved</div>'
         f'    </div>'
         f'  </div>'
         f'</div>',
@@ -607,23 +607,23 @@ def render_metrics_panel(metrics: dict, optimizations: list, baseline_label: str
             fig = go.Figure()
             fig.add_trace(go.Bar(
                 name="Actual (optimized)", x=step_names, y=actual_costs,
-                marker_color="#4f8ef7",
+                marker_color="#818cf8",
                 text=[f"${c:.4f}" for c in actual_costs],
-                textposition="outside", textfont=dict(size=10, color="#8b92a5"),
+                textposition="outside", textfont=dict(size=10, color="#8b949e"),
             ))
             fig.add_trace(go.Bar(
                 name="Same work on Opus", x=step_names, y=opus_costs,
                 marker_color="#f4607e",
                 text=[f"${c:.4f}" for c in opus_costs],
-                textposition="outside", textfont=dict(size=10, color="#8b92a5"),
+                textposition="outside", textfont=dict(size=10, color="#8b949e"),
             ))
             fig.update_layout(
                 height=240, margin=dict(t=10, b=30, l=0, r=0),
                 plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)",
-                font=dict(color="#8b92a5", size=10, family="Inter, system-ui"),
-                xaxis=dict(showgrid=False, tickfont=dict(size=9, color="#8b92a5")),
+                font=dict(color="#8b949e", size=10, family="Inter, system-ui"),
+                xaxis=dict(showgrid=False, tickfont=dict(size=9, color="#8b949e")),
                 yaxis=dict(showgrid=False, visible=False),
-                legend=dict(font=dict(color="#8b92a5"), bgcolor="rgba(0,0,0,0)", orientation="h"),
+                legend=dict(font=dict(color="#8b949e"), bgcolor="rgba(0,0,0,0)", orientation="h"),
                 bargap=0.3, barmode="group",
             )
             st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
@@ -651,15 +651,15 @@ def render_metrics_panel(metrics: dict, optimizations: list, baseline_label: str
             f'        <span class="sf-badge sf-badge-violet">{thinking:,} thinking</span>'
             f'        <span class="sf-badge sf-badge-slate">{step["duration_ms"]}ms</span>'
             f'      </div>'
-            f'      <div style="font-size:0.77rem;color:#8b92a5;margin-top:8px;line-height:1.5;">'
+            f'      <div style="font-size:0.77rem;color:#8b949e;margin-top:8px;line-height:1.5;">'
             f'        {step["why_this_model"]}'
             f'      </div>'
             f'    </div>'
             f'    <div style="text-align:right;white-space:nowrap;">'
-            f'      <div style="font-size:1.1rem;font-weight:600;color:#00d4aa;">${step["cost_usd"]:.4f}</div>'
-            f'      <div style="font-size:0.68rem;color:#8b92a5;">actual (Anthropic rates)</div>'
+            f'      <div style="font-size:1.1rem;font-weight:600;color:#3fb950;">${step["cost_usd"]:.4f}</div>'
+            f'      <div style="font-size:0.68rem;color:#8b949e;">actual (Anthropic rates)</div>'
             f'      <div style="font-size:0.9rem;font-weight:600;color:#f4607e;text-decoration:line-through;margin-top:6px;">${opus_eq:.4f}</div>'
-            f'      <div style="font-size:0.66rem;color:#8b92a5;">{mult_str}</div>'
+            f'      <div style="font-size:0.66rem;color:#8b949e;">{mult_str}</div>'
             f'    </div>'
             f'  </div>'
             f'</div>',
@@ -676,7 +676,7 @@ def render_metrics_panel(metrics: dict, optimizations: list, baseline_label: str
                 f'<div class="sf-card" style="padding:12px 16px;margin-bottom:6px;">'
                 f'  <div style="display:flex;align-items:flex-start;gap:10px;">'
                 f'    <span class="sf-badge sf-badge-{badge_cls}" style="margin-top:2px;white-space:nowrap;">{title}</span>'
-                f'    <div style="font-size:0.78rem;color:#8b92a5;line-height:1.5;">{desc}</div>'
+                f'    <div style="font-size:0.78rem;color:#8b949e;line-height:1.5;">{desc}</div>'
                 f'  </div>'
                 f'</div>',
                 unsafe_allow_html=True,
@@ -739,17 +739,21 @@ def render_hero():
     else:
         badge_html = (
             '<div class="sf-hero-badge" style="border-color:rgba(148,163,184,0.2);background:rgba(148,163,184,0.05);">'
-            '  <div class="sf-hero-badge-label" style="color:#4a5070">Active Project</div>'
-            '  <div class="sf-hero-badge-value" style="color:#4a5070">None selected</div>'
+            '  <div class="sf-hero-badge-label" style="color:#6e7681">Active Project</div>'
+            '  <div class="sf-hero-badge-value" style="color:#6e7681">None selected</div>'
             '</div>'
         )
+    # The sidebar carries the StackForge brand; the header names what you're looking at.
+    title = pname if pid else 'Stack<span class="accent">Forge</span>'
+    sub = ("Client documents → requirements → epics and stories → sprints → code drafts"
+           if pid else "AI SDLC pipeline built for low token cost")
     st.markdown(
         f'<div class="sf-hero">'
         f'  <div class="sf-hero-left">'
-        f'    <div class="sf-hero-logo">Stack<span class="accent">Forge</span></div>'
-        f'    <div class="sf-hero-sub">AI-Powered SDLC Automation &nbsp;·&nbsp; Stackular Technologies</div>'
+        f'    <div class="sf-hero-logo">{title}</div>'
+        f'    <div class="sf-hero-sub">{sub}</div>'
         f'  </div>'
-        f'  {badge_html}'
+        f'  {"" if pid else badge_html}'
         f'</div>',
         unsafe_allow_html=True,
     )
@@ -757,17 +761,137 @@ def render_hero():
 
 render_hero()
 
+# ─── Mission control: stage rail (sidebar) + KPI tiles ───────────────────────
+
+RAIL_STYLES = """
+section[data-testid="stSidebar"] { background: #0d1117; border-right: 1px solid #30363d; }
+.sf-rail-brand { font-size: 1.15rem; font-weight: 600; letter-spacing: -0.02em; color: #e6edf3; margin: 4px 0 2px; }
+.sf-rail-brand span { color: #818cf8; }
+.sf-rail-sub { font-size: 0.75rem; color: #8b949e; margin-bottom: 18px; }
+.sf-rail-label { font-size: 0.68rem; letter-spacing: 0.06em; text-transform: uppercase; color: #6e7681; margin: 14px 0 8px; }
+.sf-rs-step { display: flex; gap: 10px; align-items: flex-start; padding: 8px 10px; border-radius: 8px; margin-bottom: 4px; }
+.sf-rs-step.running { background: rgba(129,140,248,0.12); }
+.sf-rs-dot { width: 18px; height: 18px; border-radius: 50%; flex: none; margin-top: 1px;
+  display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 600; }
+.sf-rs-step.done .sf-rs-dot { background: rgba(63,185,80,0.15); color: #3fb950; border: 1px solid #3fb950; }
+.sf-rs-step.running .sf-rs-dot { border: 2px solid #818cf8; border-top-color: transparent; animation: sf-spin 0.9s linear infinite; }
+.sf-rs-step.failed .sf-rs-dot { background: rgba(244,63,94,0.15); color: #f43f5e; border: 1px solid #f43f5e; }
+.sf-rs-step.idle .sf-rs-dot { border: 1px solid #30363d; color: #6e7681; }
+.sf-rs-name { font-size: 0.86rem; color: #e6edf3; font-weight: 500; line-height: 1.2; }
+.sf-rs-step.idle .sf-rs-name { color: #8b949e; }
+.sf-rs-meta { font-size: 0.74rem; color: #8b949e; margin-top: 2px; }
+@keyframes sf-spin { to { transform: rotate(360deg); } }
+.sf-kpi { background: #161b22; border: 1px solid #30363d; border-radius: 12px; padding: 14px 16px; height: 100%; }
+.sf-kpi-label { font-size: 0.74rem; color: #8b949e; }
+.sf-kpi-value { font-size: 1.45rem; font-weight: 600; color: #e6edf3; letter-spacing: -0.02em; margin-top: 2px; }
+.sf-kpi-value.good { color: #3fb950; }
+.sf-kpi-note { font-size: 0.72rem; color: #6e7681; margin-top: 2px; }
+/* The global Inter rule above also hits Streamlit's icon spans, which then show
+   their ligature names ("arrow_right") as text. Give icons their font back. */
+[data-testid="stIconMaterial"], .material-symbols-rounded, [class*="material-symbols"] {
+  font-family: 'Material Symbols Rounded' !important;
+}
+"""
+st.markdown(f"<style>{RAIL_STYLES}</style>", unsafe_allow_html=True)
+
+
+def _step_state(status: str | None, has_output: bool = False) -> str:
+    s = (status or "").lower()
+    if s in ("ready", "done", "completed"):
+        return "done"
+    if s in ("processing", "generating", "running", "in_progress"):
+        return "running"
+    if s == "failed":
+        return "failed"
+    return "done" if has_output else "idle"
+
+
+def _step_html(state: str, name: str, meta: str, number: int) -> str:
+    mark = {"done": "&#10003;", "failed": "!", "running": "", "idle": str(number)}[state]
+    return (f'<div class="sf-rs-step {state}"><div class="sf-rs-dot">{mark}</div>'
+            f'<div><div class="sf-rs-name">{name}</div><div class="sf-rs-meta">{meta}</div></div></div>')
+
+
+def render_stage_rail():
+    pid = st.session_state.get("project_id")
+    with st.sidebar:
+        st.markdown('<div class="sf-rail-brand">Stack<span>Forge</span></div>'
+                    '<div class="sf-rail-sub">Client documents to sprint-ready work</div>',
+                    unsafe_allow_html=True)
+        if not pid:
+            st.markdown('<div class="sf-rail-label">Pipeline</div>'
+                        '<div class="sf-rs-meta">Pick or create a project in Setup to see its pipeline.</div>',
+                        unsafe_allow_html=True)
+            return
+        s1 = cached_get(f"/projects/{pid}/status") or {}
+        s2 = cached_get(f"/projects/{pid}/stage2-status") or {}
+        s3 = cached_get(f"/projects/{pid}/stage3-status") or {}
+        s4 = cached_get(f"/projects/{pid}/stage4-status") or {}
+        docs, reqs = s1.get("document_count", 0), s1.get("requirement_count", 0)
+        pushed = s2.get("ado_pushed") or s3.get("ado_pushed")
+        steps = [
+            (_step_state(s1.get("status"), docs > 0), "Client documents",
+             f"{s1.get('ready_count', 0)} of {docs} parsed" if docs else "Upload SOW, BRD, transcripts"),
+            (_step_state(s1.get("status"), reqs > 0), "Requirements",
+             f"{reqs} extracted · {s1.get('clarification_count', 0)} questions" if reqs else "Summarise, extract, dedup"),
+            (_step_state(s2.get("status"), s2.get("epic_count", 0) > 0), "Epics and stories",
+             f"{s2.get('epic_count', 0)} epics · {s2.get('story_count', 0)} stories" if s2.get("epic_count") else "Group, then write stories"),
+            (_step_state(s3.get("status"), s3.get("sprint_count", 0) > 0), "Sprints and tasks",
+             f"{s3.get('sprint_count', 0)} sprints · {s3.get('task_count', 0)} tasks" if s3.get("sprint_count") else "Pack sprints, split tasks"),
+            (_step_state(s4.get("status"), s4.get("completed", 0) > 0), "Code drafts",
+             f"{s4.get('completed', 0)} tasks drafted" if s4.get("completed") else "One workspace per task"),
+            ("done" if pushed else "idle", "Push to Azure DevOps",
+             "Work items created" if pushed else "Optional · needs ADO token"),
+        ]
+        rail = "".join(_step_html(state, name, meta, i + 1) for i, (state, name, meta) in enumerate(steps))
+        kb_state = "done" if reqs else "idle"
+        st.markdown(f'<div class="sf-rail-label">Pipeline</div>{rail}'
+                    f'<div class="sf-rail-label">Always on</div>'
+                    f'{_step_html(kb_state, "Knowledge base", "Keyword + semantic search", 7)}',
+                    unsafe_allow_html=True)
+        if st.button("Refresh status", use_container_width=True):
+            invalidate_project_cache(pid)
+            st.rerun()
+
+
+def render_kpis():
+    pid = st.session_state.get("project_id")
+    if not pid:
+        return
+    s1 = cached_get(f"/projects/{pid}/status") or {}
+    s2 = cached_get(f"/projects/{pid}/stage2-status") or {}
+    cost = (cached_get(f"/projects/{pid}/cost-summary") or {}).get("totals", {})
+    tokens = cost.get("input_tokens", 0) + cost.get("output_tokens", 0)
+    tiles = [
+        ("Requirements", f"{s1.get('requirement_count', 0)}", f"from {s1.get('document_count', 0)} documents", ""),
+        ("Stories", f"{s2.get('story_count', 0)}", f"in {s2.get('epic_count', 0)} epics", ""),
+        ("Tokens used", f"{tokens / 1000:.1f}k" if tokens else "0", f"{int(cost.get('calls', 0))} LLM calls", ""),
+        ("Cost at Anthropic rates", f"${cost.get('cost_routed', 0):.2f}",
+         f"all-Opus would be ${cost.get('cost_all_opus', 0):.2f}", ""),
+        ("Saved by model routing", f"{cost.get('saving_pct', 0):.0f}%" if tokens else "—",
+         "vs every call on Opus", "good" if tokens else ""),
+    ]
+    for col, (label, value, note, cls) in zip(st.columns(len(tiles)), tiles):
+        col.markdown(f'<div class="sf-kpi"><div class="sf-kpi-label">{label}</div>'
+                     f'<div class="sf-kpi-value {cls}">{value}</div><div class="sf-kpi-note">{note}</div></div>',
+                     unsafe_allow_html=True)
+    st.markdown('<div style="height:14px"></div>', unsafe_allow_html=True)
+
+
+render_stage_rail()
+render_kpis()
+
 # ─── Tab layout ───────────────────────────────────────────────────────────────
 
 tab_setup, tab_upload, tab_review, tab_docs, tab_clarify, tab_epics, tab_sprints, tab_stage4 = st.tabs([
-    "🏗️  Setup",
-    "📂  Upload",
-    "📋  Requirements",
-    "📄  Documents",
-    "💬  Clarifications",
-    "🗂️  Epics & Stories",
-    "🏃  Sprint Plan",
-    "🤖  AI Dev (Stage 4)",
+    "Setup",
+    "Upload",
+    "Requirements",
+    "SDLC docs",
+    "Clarifications and search",
+    "Epics and stories",
+    "Sprint plan",
+    "Code drafts",
 ])
 
 
@@ -794,7 +918,7 @@ with tab_setup:
             border_style = (
                 "border-color:#f43f5e;box-shadow:0 0 0 1px rgba(244,63,94,0.15);"
                 if is_confirming
-                else ("border-color:#4f8ef7;box-shadow:0 0 0 1px rgba(79,142,247,0.15);" if is_active else "")
+                else ("border-color:#818cf8;box-shadow:0 0 0 1px rgba(129,140,248,0.15);" if is_active else "")
             )
             status = p.get("status", "pending")
             status_badge = render_status_badge(status)
@@ -809,8 +933,8 @@ with tab_setup:
                     f'    <div class="sf-card-title">{name}</div>'
                     f'    {status_badge}'
                     f'  </div>'
-                    f'  <div style="font-size:0.75rem;color:#8b92a5;">{client}</div>'
-                    f'  <div style="font-size:0.7rem;color:#4a5070;margin-top:3px;">Created {created}</div>'
+                    f'  <div style="font-size:0.75rem;color:#8b949e;">{client}</div>'
+                    f'  <div style="font-size:0.7rem;color:#6e7681;margin-top:3px;">Created {created}</div>'
                     f'</div>',
                     unsafe_allow_html=True,
                 )
@@ -860,7 +984,7 @@ with tab_setup:
     else:
         st.markdown(
             '<div class="sf-card" style="text-align:center;padding:28px;">'
-            '<div style="color:#4a5070;font-size:0.85rem;">No projects yet — create one below.</div>'
+            '<div style="color:#6e7681;font-size:0.85rem;">No projects yet — create one below.</div>'
             '</div>',
             unsafe_allow_html=True,
         )
@@ -893,12 +1017,12 @@ with tab_setup:
         pid = st.session_state["project_id"]
         pname = st.session_state.get("project_name", "")
         st.markdown(
-            f'<div class="sf-card" style="margin-top:16px;border-color:#2e3250;">'
+            f'<div class="sf-card" style="margin-top:16px;border-color:#30363d;">'
             f'  <div style="display:flex;align-items:center;justify-content:space-between;">'
             f'    <div>'
-            f'      <div style="font-size:0.65rem;text-transform:uppercase;letter-spacing:0.08em;color:#8b92a5;margin-bottom:4px;">Active Project</div>'
+            f'      <div style="font-size:0.65rem;text-transform:uppercase;letter-spacing:0.08em;color:#8b949e;margin-bottom:4px;">Active Project</div>'
             f'      <div class="sf-card-title" style="font-size:1rem;">{pname}</div>'
-            f'      <div style="font-size:0.72rem;color:#4a5070;font-family:monospace;margin-top:2px;">{pid}</div>'
+            f'      <div style="font-size:0.72rem;color:#6e7681;font-family:monospace;margin-top:2px;">{pid}</div>'
             f'    </div>'
             f'    <span class="sf-badge sf-badge-green">ACTIVE</span>'
             f'  </div>'
@@ -948,9 +1072,9 @@ with tab_upload:
 
                 for i, f in enumerate(uploaded):
                     progress_ph.markdown(
-                        f'<div style="font-size:0.82rem;color:#8b92a5;padding:6px 0;">'
+                        f'<div style="font-size:0.82rem;color:#8b949e;padding:6px 0;">'
                         f'Uploading {i + 1} of {len(uploaded)}: '
-                        f'<strong style="color:#e8eaf0;">{f.name}</strong>…</div>',
+                        f'<strong style="color:#e6edf3;">{f.name}</strong>…</div>',
                         unsafe_allow_html=True,
                     )
                     files = {"file": (f.name, f.getvalue(), f.type)}
@@ -1052,7 +1176,7 @@ with tab_upload:
             if doc_count == 0:
                 st.markdown(
                     '<div class="sf-card" style="text-align:center;padding:28px;">'
-                    '<div style="color:#4a5070;font-size:0.85rem;">'
+                    '<div style="color:#6e7681;font-size:0.85rem;">'
                     'No documents uploaded yet. Select files above and click <strong>Run AI Pipeline</strong>.'
                     '</div></div>',
                     unsafe_allow_html=True,
@@ -1095,7 +1219,7 @@ with tab_upload:
                     f'<div class="sf-metric">'
                     f'  <div class="sf-metric-value">'
                     f'    {ready_count}'
-                    f'    <span style="font-size:1rem;color:#8b92a5;">/{doc_count}</span>'
+                    f'    <span style="font-size:1rem;color:#8b949e;">/{doc_count}</span>'
                     f'    {failed_html}'
                     f'  </div>'
                     f'  <div class="sf-metric-label">Docs Processed</div>'
@@ -1122,9 +1246,9 @@ with tab_upload:
             # ── Status message ─────────────────────────────────────────────
             if ps == "processing":
                 st.markdown(
-                    '<div class="sf-card" style="border-color:rgba(79,142,247,0.3);padding:12px 16px;">'
+                    '<div class="sf-card" style="border-color:rgba(129,140,248,0.3);padding:12px 16px;">'
                     '  <span class="sf-spinner"></span>'
-                    '  <span style="color:#4f8ef7;font-size:0.85rem;">'
+                    '  <span style="color:#818cf8;font-size:0.85rem;">'
                     '    AI pipeline running — page auto-refreshes every 5 seconds…'
                     '  </span>'
                     '</div>',
@@ -1171,13 +1295,13 @@ with tab_upload:
                     )
 
                     border_style = "border-left:3px solid #f43f5e;" if doc_status == "failed" else (
-                        "border-left:3px solid #00d4aa;" if doc_status == "done" else ""
+                        "border-left:3px solid #3fb950;" if doc_status == "done" else ""
                     )
 
                     st.markdown(
                         f'<div class="sf-card" style="padding:10px 16px;margin-bottom:6px;{border_style}">'
                         f'  <div style="display:flex;justify-content:space-between;align-items:center;">'
-                        f'    <span style="font-size:0.85rem;color:#e8eaf0;">{doc["filename"]}</span>'
+                        f'    <span style="font-size:0.85rem;color:#e6edf3;">{doc["filename"]}</span>'
                         f'    {badge}'
                         f'  </div>'
                         f'  {error_html}'
@@ -1241,15 +1365,15 @@ with tab_review:
                     marker_color=chart_colors,
                     text=chart_values,
                     textposition="outside",
-                    textfont=dict(color="#8b92a5", size=11),
+                    textfont=dict(color="#8b949e", size=11),
                 ))
                 fig.update_layout(
                     height=200,
                     margin=dict(t=10, b=30, l=0, r=0),
                     plot_bgcolor="rgba(0,0,0,0)",
                     paper_bgcolor="rgba(0,0,0,0)",
-                    font=dict(color="#8b92a5", size=11, family="Inter, system-ui"),
-                    xaxis=dict(showgrid=False, tickfont=dict(color="#8b92a5")),
+                    font=dict(color="#8b949e", size=11, family="Inter, system-ui"),
+                    xaxis=dict(showgrid=False, tickfont=dict(color="#8b949e")),
                     yaxis=dict(showgrid=False, visible=False),
                     bargap=0.35,
                 )
@@ -1455,7 +1579,7 @@ with tab_docs:
                     st.markdown(
                         '<div class="sf-card" style="padding:14px 18px;">'
                         '  <span class="sf-spinner"></span>'
-                        '  <span style="color:#4f8ef7;font-size:0.85rem;">Stitch is generating UI screens (~30 seconds)…</span>'
+                        '  <span style="color:#818cf8;font-size:0.85rem;">Stitch is generating UI screens (~30 seconds)…</span>'
                         '</div>',
                         unsafe_allow_html=True,
                     )
@@ -1483,7 +1607,7 @@ with tab_docs:
                             (sc1 if i % 2 == 0 else sc2).markdown(
                                 f'<a href="{link}" target="_blank" style="text-decoration:none;">'
                                 f'  <div class="sf-card" style="padding:10px 14px;margin-bottom:6px;cursor:pointer;">'
-                                f'    <div style="font-size:0.8rem;color:#e8eaf0;">{s["label"]}</div>'
+                                f'    <div style="font-size:0.8rem;color:#e6edf3;">{s["label"]}</div>'
                                 f'    <div style="margin-top:3px;">{status_badge}</div>'
                                 f'  </div>'
                                 f'</a>',
@@ -1531,7 +1655,7 @@ with tab_clarify:
             if not open_qs and not answered_qs:
                 st.markdown(
                     '<div class="sf-card" style="text-align:center;padding:24px;">'
-                    '<div style="color:#4a5070;font-size:0.85rem;">No clarifications yet. Run the pipeline first.</div>'
+                    '<div style="color:#6e7681;font-size:0.85rem;">No clarifications yet. Run the pipeline first.</div>'
                     '</div>',
                     unsafe_allow_html=True,
                 )
@@ -1539,7 +1663,7 @@ with tab_clarify:
                 for q in open_qs:
                     p_class, p_color = PRIORITY_STYLES.get(q["priority"], ("slate", "#94a3b8"))
                     context_html = (
-                        f'<div style="font-size:0.75rem;color:#8b92a5;margin:5px 0 0;">{q["context"]}</div>'
+                        f'<div style="font-size:0.75rem;color:#8b949e;margin:5px 0 0;">{q["context"]}</div>'
                         if q.get("context") else ""
                     )
                     st.markdown(
@@ -1581,10 +1705,10 @@ with tab_clarify:
                         for q in answered_qs:
                             st.markdown(
                                 f'<div class="sf-card" style="padding:12px 16px;margin-bottom:6px;">'
-                                f'  <div style="font-size:0.78rem;color:#8b92a5;margin-bottom:4px;font-weight:500;">Q</div>'
+                                f'  <div style="font-size:0.78rem;color:#8b949e;margin-bottom:4px;font-weight:500;">Q</div>'
                                 f'  <div class="sf-card-title" style="font-size:0.85rem;">{q["question"]}</div>'
-                                f'  <div style="font-size:0.72rem;text-transform:uppercase;letter-spacing:0.08em;color:#00d4aa;margin:8px 0 3px;">Answer</div>'
-                                f'  <div style="font-size:0.82rem;color:#e8eaf0;">{q["answer"]}</div>'
+                                f'  <div style="font-size:0.72rem;text-transform:uppercase;letter-spacing:0.08em;color:#3fb950;margin:8px 0 3px;">Answer</div>'
+                                f'  <div style="font-size:0.82rem;color:#e6edf3;">{q["answer"]}</div>'
                                 f'</div>',
                                 unsafe_allow_html=True,
                             )
@@ -1604,7 +1728,7 @@ with tab_clarify:
                     results = api_post(f"/projects/{project_id}/query", json={"query": query_text})
                 if results:
                     st.markdown(
-                        f'<div style="font-size:0.72rem;color:#8b92a5;margin:10px 0 8px;">'
+                        f'<div style="font-size:0.72rem;color:#8b949e;margin:10px 0 8px;">'
                         f'  {len(results)} result{"s" if len(results) != 1 else ""} for <em>"{query_text}"</em>'
                         f'</div>',
                         unsafe_allow_html=True,
@@ -1623,12 +1747,12 @@ with tab_clarify:
                             f'<div class="sf-card">'
                             f'  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">'
                             f'    <div style="display:flex;align-items:center;gap:8px;">'
-                            f'      <span style="font-size:0.95rem;font-weight:700;color:#4f8ef7">#{i}</span>'
+                            f'      <span style="font-size:0.95rem;font-weight:700;color:#818cf8">#{i}</span>'
                             f'      <span class="sf-badge sf-badge-{badge_cls}">{icon} {label}</span>'
                             f'    </div>'
-                            f'    <span style="font-size:0.72rem;color:#8b92a5">{score_pct}% match</span>'
+                            f'    <span style="font-size:0.72rem;color:#8b949e">{score_pct}% match</span>'
                             f'  </div>'
-                            f'  <div style="font-size:0.8rem;color:#e8eaf0;line-height:1.55;">{preview}</div>'
+                            f'  <div style="font-size:0.8rem;color:#e6edf3;line-height:1.55;">{preview}</div>'
                             f'</div>',
                             unsafe_allow_html=True,
                         )
@@ -1657,11 +1781,11 @@ with tab_epics:
 
         with top_left:
             status_color = {
-                "idle":       ("#4a5070", "#2e3250"),
-                "generating": ("#4f8ef7", "rgba(79,142,247,0.15)"),
-                "ready":      ("#00d4aa", "rgba(0,212,170,0.12)"),
+                "idle":       ("#6e7681", "#30363d"),
+                "generating": ("#818cf8", "rgba(129,140,248,0.15)"),
+                "ready":      ("#3fb950", "rgba(63,185,80,0.12)"),
                 "failed":     ("#f43f5e", "rgba(244,63,94,0.12)"),
-            }.get(s2_status, ("#8b92a5", "#2e3250"))
+            }.get(s2_status, ("#8b949e", "#30363d"))
 
             m1, m2, m3 = st.columns(3)
             m1.markdown(
@@ -1709,7 +1833,7 @@ with tab_epics:
                 st.markdown(
                     '<div class="sf-card" style="padding:14px 18px;">'
                     '  <span class="sf-spinner"></span>'
-                    '  <span style="color:#4f8ef7;font-size:0.85rem;">Generating epics and stories…</span>'
+                    '  <span style="color:#818cf8;font-size:0.85rem;">Generating epics and stories…</span>'
                     '</div>',
                     unsafe_allow_html=True,
                 )
@@ -1857,8 +1981,8 @@ with tab_epics:
                                 )
                                 ac_list = story.get("acceptance_criteria") or []
                                 ac_html = "".join(
-                                    f'<div style="font-size:0.77rem;color:#8b92a5;padding:2px 0;">'
-                                    f'  <span style="color:#4a5070;margin-right:5px;">▸</span>{ac}'
+                                    f'<div style="font-size:0.77rem;color:#8b949e;padding:2px 0;">'
+                                    f'  <span style="color:#6e7681;margin-right:5px;">▸</span>{ac}'
                                     f'</div>'
                                     for ac in ac_list
                                 )
@@ -1893,7 +2017,7 @@ with tab_epics:
 # ═══════════════════════════════════════════════════════════════════════════════
 
 TASK_TYPE_META = {
-    "backend":       ("⚙️",  "#4f8ef7"),
+    "backend":       ("⚙️",  "#818cf8"),
     "frontend":      ("🖥️",  "#a78bfa"),
     "testing":       ("🧪", "#f87171"),
     "devops":        ("🔧", "#34d399"),
@@ -1953,9 +2077,9 @@ with tab_sprints:
         with top_left:
             m1, m2, m3, m4 = st.columns(4)
             status_color = {
-                "ready": "#00d4aa", "generating": "#4f8ef7",
-                "failed": "#f43f5e", "idle": "#4a5070",
-            }.get(s3_status, "#4a5070")
+                "ready": "#3fb950", "generating": "#818cf8",
+                "failed": "#f43f5e", "idle": "#6e7681",
+            }.get(s3_status, "#6e7681")
             m1.markdown(
                 f'<div class="sf-metric">'
                 f'  <div class="sf-metric-value" style="color:{status_color};font-size:1rem;">'
@@ -1989,8 +2113,8 @@ with tab_sprints:
 
         if s3_status == "generating":
             st.markdown(
-                '<div style="margin-top:12px;padding:12px 16px;background:#1a1d2e;'
-                'border:1px solid #2e3250;border-radius:10px;color:#4f8ef7;font-size:0.85rem;">'
+                '<div style="margin-top:12px;padding:12px 16px;background:#161b22;'
+                'border:1px solid #30363d;border-radius:10px;color:#818cf8;font-size:0.85rem;">'
                 '⏳ Generating sprint plan and task breakdown in background… click Refresh to check progress.'
                 '</div>',
                 unsafe_allow_html=True,
@@ -2017,7 +2141,7 @@ with tab_sprints:
                     name="Used",
                     x=sprint_names,
                     y=used_pts,
-                    marker_color="#4f8ef7",
+                    marker_color="#818cf8",
                     text=[f"{p}%" for p in pct],
                     textposition="outside",
                 ))
@@ -2025,13 +2149,13 @@ with tab_sprints:
                     name="Remaining",
                     x=sprint_names,
                     y=[max(0, c - u) for c, u in zip(cap_pts, used_pts)],
-                    marker_color="#2e3250",
+                    marker_color="#30363d",
                 ))
                 fig.update_layout(
                     barmode="stack",
                     paper_bgcolor="rgba(0,0,0,0)",
                     plot_bgcolor="rgba(0,0,0,0)",
-                    font_color="#e8eaf0",
+                    font_color="#e6edf3",
                     height=220,
                     margin=dict(l=0, r=0, t=24, b=0),
                     showlegend=True,
@@ -2039,8 +2163,8 @@ with tab_sprints:
                         orientation="h", yanchor="bottom", y=1.02,
                         xanchor="right", x=1, font=dict(size=11),
                     ),
-                    xaxis=dict(gridcolor="#2e3250"),
-                    yaxis=dict(gridcolor="#2e3250", title="Story Points"),
+                    xaxis=dict(gridcolor="#30363d"),
+                    yaxis=dict(gridcolor="#30363d", title="Story Points"),
                 )
                 st.plotly_chart(fig, use_container_width=True)
 
@@ -2050,7 +2174,7 @@ with tab_sprints:
             for sprint in sprints_data:
                 sprint_id = str(sprint["id"])
                 util_pct = round(sprint["total_points"] / sprint["capacity_points"] * 100) if sprint["capacity_points"] else 0
-                util_color = "#f43f5e" if util_pct > 100 else ("#f59e0b" if util_pct > 85 else "#00d4aa")
+                util_color = "#f43f5e" if util_pct > 100 else ("#f59e0b" if util_pct > 85 else "#3fb950")
 
                 with st.expander(
                     f"{sprint['name']}  —  "
@@ -2061,10 +2185,10 @@ with tab_sprints:
                     # Utilisation bar
                     st.markdown(
                         f'<div style="margin-bottom:12px;">'
-                        f'  <div style="font-size:0.72rem;color:#8b92a5;margin-bottom:4px;">'
+                        f'  <div style="font-size:0.72rem;color:#8b949e;margin-bottom:4px;">'
                         f'    Capacity utilisation: <span style="color:{util_color};font-weight:600;">{util_pct}%</span>'
                         f'  </div>'
-                        f'  <div style="background:#2e3250;border-radius:4px;height:6px;overflow:hidden;">'
+                        f'  <div style="background:#30363d;border-radius:4px;height:6px;overflow:hidden;">'
                         f'    <div style="background:{util_color};width:{min(util_pct,100)}%;height:100%;'
                         f'         border-radius:4px;transition:width 0.3s;"></div>'
                         f'  </div>'
@@ -2088,24 +2212,24 @@ with tab_sprints:
                         task_chips = ""
                         for task in tasks:
                             tt = task.get("task_type", "backend")
-                            icon, color = TASK_TYPE_META.get(tt, ("⚙️", "#4f8ef7"))
+                            icon, color = TASK_TYPE_META.get(tt, ("⚙️", "#818cf8"))
                             hrs = task.get("estimated_hours", 0)
                             hrs_str = f"{int(hrs)}h" if hrs == int(hrs) else f"{hrs}h"
                             task_chips += (
                                 f'<div style="display:inline-flex;align-items:center;gap:4px;'
-                                f'     background:rgba(255,255,255,0.04);border:1px solid #2e3250;'
+                                f'     background:rgba(255,255,255,0.04);border:1px solid #30363d;'
                                 f'     border-radius:6px;padding:3px 8px;margin:2px;font-size:0.72rem;">'
                                 f'  <span style="color:{color};">{icon}</span>'
-                                f'  <span style="color:#e8eaf0;">{task["title"]}</span>'
-                                f'  <span style="color:#4a5070;">·</span>'
-                                f'  <span style="color:#8b92a5;">{hrs_str}</span>'
+                                f'  <span style="color:#e6edf3;">{task["title"]}</span>'
+                                f'  <span style="color:#6e7681;">·</span>'
+                                f'  <span style="color:#8b949e;">{hrs_str}</span>'
                                 f'</div>'
                             )
 
                         st.markdown(
                             f'<div class="sf-card" style="margin-bottom:8px;">'
                             f'  <div style="display:flex;align-items:center;margin-bottom:6px;">'
-                            f'    <span style="font-size:0.88rem;font-weight:500;color:#e8eaf0;">'
+                            f'    <span style="font-size:0.88rem;font-weight:500;color:#e6edf3;">'
                             f'      {story["title"]}'
                             f'    </span>'
                             f'    {pts_badge}'
@@ -2209,10 +2333,10 @@ with tab_sprints:
 # ═══════════════════════════════════════════════════════════════════════════════
 
 SESSION_STATUS_COLOR = {
-    "completed": "#00d4aa",
-    "running":   "#4f8ef7",
+    "completed": "#3fb950",
+    "running":   "#818cf8",
     "failed":    "#f43f5e",
-    "pending":   "#4a5070",
+    "pending":   "#6e7681",
 }
 
 with tab_stage4:
@@ -2276,7 +2400,7 @@ with tab_stage4:
 
         with top_left:
             m1, m2, m3, m4 = st.columns(4)
-            status_color = SESSION_STATUS_COLOR.get(s4_status, "#4a5070")
+            status_color = SESSION_STATUS_COLOR.get(s4_status, "#6e7681")
             m1.markdown(
                 f'<div class="sf-metric">'
                 f'  <div class="sf-metric-value" style="color:{status_color};font-size:1rem;">'
@@ -2295,7 +2419,7 @@ with tab_stage4:
             )
             m3.markdown(
                 f'<div class="sf-metric">'
-                f'  <div class="sf-metric-value" style="color:#00d4aa;">{completed}</div>'
+                f'  <div class="sf-metric-value" style="color:#3fb950;">{completed}</div>'
                 f'  <div class="sf-metric-label">Completed</div>'
                 f'</div>',
                 unsafe_allow_html=True,
@@ -2312,8 +2436,8 @@ with tab_stage4:
         if s4_status == "generating":
             done_of = f"{completed}/{total_tasks}" if total_tasks else "…"
             st.markdown(
-                f'<div style="margin-top:12px;padding:12px 16px;background:#1a1d2e;'
-                f'border:1px solid #2e3250;border-radius:10px;color:#4f8ef7;font-size:0.85rem;">'
+                f'<div style="margin-top:12px;padding:12px 16px;background:#161b22;'
+                f'border:1px solid #30363d;border-radius:10px;color:#818cf8;font-size:0.85rem;">'
                 f'⏳ Claude Code agents running… {done_of} tasks complete. '
                 f'Click Refresh to check progress.'
                 f'</div>',
@@ -2332,12 +2456,12 @@ with tab_stage4:
 
             for sess in sessions:
                 sess_status = sess.get("status", "pending")
-                sess_color  = SESSION_STATUS_COLOR.get(sess_status, "#4a5070")
+                sess_color  = SESSION_STATUS_COLOR.get(sess_status, "#6e7681")
                 dur_ms      = sess.get("duration_ms") or 0
                 dur_s       = round(dur_ms / 1000, 1)
                 file_count  = sess.get("file_count", 0)
                 tt          = sess.get("task_type", "backend")
-                type_icon, type_color = TASK_TYPE_META.get(tt, ("⚙️", "#4f8ef7"))
+                type_icon, type_color = TASK_TYPE_META.get(tt, ("⚙️", "#818cf8"))
 
                 expander_label = (
                     f"{type_icon} {sess['task_title']}  "
@@ -2358,7 +2482,7 @@ with tab_stage4:
                         f'    color:{type_color};border:1px solid {type_color}33;">'
                         f'    {type_icon} {tt}'
                         f'  </span>'
-                        f'  <span style="font-size:0.75rem;color:#8b92a5;line-height:1.8;">'
+                        f'  <span style="font-size:0.75rem;color:#8b949e;line-height:1.8;">'
                         f'    {dur_s}s wall-clock'
                         f'  </span>'
                         f'</div>',
@@ -2373,7 +2497,7 @@ with tab_stage4:
                         if detail and detail.get("session_summary"):
                             st.markdown("**Claude's summary:**")
                             st.markdown(
-                                f'<div style="background:#1a1d2e;border:1px solid #2e3250;'
+                                f'<div style="background:#161b22;border:1px solid #30363d;'
                                 f'border-radius:8px;padding:12px 16px;font-size:0.82rem;'
                                 f'color:#c8cfe0;white-space:pre-wrap;">'
                                 f'{detail["session_summary"]}'
@@ -2393,7 +2517,7 @@ with tab_stage4:
                                     f'  <span style="font-family:monospace;font-size:0.78rem;color:#a78bfa;">'
                                     f'    📄 {f_info["path"]}'
                                     f'  </span>'
-                                    f'  <span style="font-size:0.72rem;color:#4a5070;">{size_str}</span>'
+                                    f'  <span style="font-size:0.72rem;color:#6e7681;">{size_str}</span>'
                                     f'</div>',
                                     unsafe_allow_html=True,
                                 )
@@ -2429,7 +2553,7 @@ with tab_stage4:
             em1, em2, em3, em4 = st.columns(4)
             em1.markdown(
                 f'<div class="sf-metric">'
-                f'  <div class="sf-metric-value" style="color:#00d4aa;">{s4_comp}</div>'
+                f'  <div class="sf-metric-value" style="color:#3fb950;">{s4_comp}</div>'
                 f'  <div class="sf-metric-label">Completed</div>'
                 f'</div>',
                 unsafe_allow_html=True,

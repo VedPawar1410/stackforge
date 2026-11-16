@@ -49,6 +49,8 @@ async def run(stages: list[int]) -> str:
         for name in DOCS:
             with open(os.path.join(DOC_DIR, name), "rb") as f:
                 await ingest_document(pid, str(client["id"]), f.read(), name, name.rsplit(".", 1)[-1])
+        with DB() as db:  # the upload route does this; a direct run must too, or the UI shows "pending"
+            db.execute("UPDATE projects SET status = 'ready' WHERE id = %s", (pid,))
         step("stage 1", t0, f"{len(DOCS)} documents")
     if 2 in stages:
         from pipeline.stage2_runner import run_stage2

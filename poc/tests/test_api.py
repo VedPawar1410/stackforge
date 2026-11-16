@@ -100,6 +100,16 @@ def test_reuploading_a_processed_file_skips_the_pipeline(client, project_id, fak
     assert again["id"] == first["id"] and again["status"] == "done"
 
 
+def test_cost_summary_reprices_recorded_calls(client, project_id, fake_llm):
+    _upload(client, project_id)
+    totals = client.get(f"/projects/{project_id}/cost-summary").json()["totals"]
+    # The three faked Stage 1 calls (summarise, extract, clarify) are recorded and priced.
+    assert totals["calls"] == 3
+    assert totals["input_tokens"] == 120 + 400 + 300
+    assert 0 < totals["cost_routed"] <= totals["cost_all_opus"]
+    assert client.get("/projects/not-a-uuid/cost-summary").status_code == 400
+
+
 def test_upload_validation(client, project_id, fake_llm):
     assert _upload(client, project_id, name="notes.exe").status_code == 400
     assert _upload(client, "00000000-0000-0000-0000-000000000000").status_code == 404
