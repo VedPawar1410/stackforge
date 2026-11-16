@@ -11,11 +11,21 @@ DATABASE_URL: str = os.environ["DATABASE_URL"]
 
 GROQ_API_KEY: str = os.environ.get("GROQ_API_KEY", "")
 OPENROUTER_API_KEY: str = os.environ.get("OPENROUTER_API_KEY", "")
+GEMINI_API_KEY: str = os.environ.get("GEMINI_API_KEY", "")
 
-# Set LLM_PROVIDER=groq or LLM_PROVIDER=openrouter in .env to switch providers
+# LLM_PROVIDER in .env: groq (default) | gemini | openrouter | ollama
 LLM_PROVIDER: str = os.environ.get("LLM_PROVIDER", "groq")
 
-if LLM_PROVIDER == "openrouter":
+if LLM_PROVIDER == "gemini":
+    # Google's OpenAI-compatible endpoint, so the same openai SDK client works.
+    # Defaults checked against the live model list (Nov 2026): the 2.5 models
+    # are closed to new users. flash-lite-latest is an alias that tracks
+    # Google's current lite model; pin a version via .env for reproducibility.
+    LLM_API_KEY = GEMINI_API_KEY
+    LLM_BASE_URL = "https://generativelanguage.googleapis.com/v1beta/openai/"
+    MODEL_CHEAP: str = os.environ.get("GEMINI_MODEL_CHEAP", "gemini-flash-lite-latest")
+    MODEL_CAPABLE: str = os.environ.get("GEMINI_MODEL_CAPABLE", "gemini-3.5-flash")
+elif LLM_PROVIDER == "openrouter":
     LLM_API_KEY: str = OPENROUTER_API_KEY
     LLM_BASE_URL: str = "https://openrouter.ai/api/v1"
     # Override via .env; defaults are free-tier NVIDIA Nemotron models — both
@@ -57,9 +67,9 @@ else:  # groq
 if LLM_PROVIDER == "openrouter":
     REASONING_LOW: dict = {"reasoning": {"effort": "none"}}
     REASONING_MEDIUM: dict = {"reasoning": {"effort": "none"}}
-elif LLM_PROVIDER == "ollama":
-    # qwen2.5-coder is not a reasoning model — send nothing rather than risk
-    # Ollama's OpenAI-compat layer choking on an unrecognized field.
+elif LLM_PROVIDER in ("ollama", "gemini"):
+    # Send no reasoning field. qwen2.5-coder isn't a reasoning model, and
+    # Gemini's lite model rejects reasoning_effort="none" with a 400.
     REASONING_LOW = {}
     REASONING_MEDIUM = {}
 else:
@@ -77,7 +87,9 @@ else:
 # hand-tuned constant; set to a real value only for OpenRouter, where one
 # shared number is safe for every file since there's no TPM budget to size
 # per max_tokens. 4s comfortably clears the 60/20=3s minimum RPM spacing.
-LLM_THROTTLE_DELAY_S: float | None = 4.0 if LLM_PROVIDER == "openrouter" else None
+# Gemini's free tier is also limited per request, about 10/min on flash models,
+# so 6s keeps a single worker under it.
+LLM_THROTTLE_DELAY_S: float | None = {"openrouter": 4.0, "gemini": 6.0}.get(LLM_PROVIDER)
 
 # Chunking
 CHUNK_TARGET_WORDS: int = 275  # target ~250-300 words per chunk
@@ -127,18 +139,23 @@ ADO_API_VERSION: str = "7.1"
 # Used by the metrics calculator to compare actual vs naive approach cost.
 # These rates are used even when running on Groq — the calculator shows what
 # the same calls would cost on the production Anthropic API.
+# Updated Nov 2026. The June 2026 table (0.25/1.25, 3/15, 15/75) predated these
+# models and made Opus look 5x Sonnet; it is now 2x, so "savings vs Opus" shrank.
 PRICING: dict = {
-    "haiku":  {"input": 0.25,  "output": 1.25},   # claude-haiku-4-5
-    "sonnet": {"input": 3.00,  "output": 15.00},   # claude-sonnet-4-6
-    "opus":   {"input": 15.00, "output": 75.00},   # claude-opus-4-8
+    "haiku":  {"input": 0.10, "output": 0.50},    # claude-haiku-5-5
+    "sonnet": {"input": 2.00, "output": 10.00},   # claude-sonnet-5-5
+    "opus":   {"input": 4.00, "output": 20.00},   # claude-opus-5-5
 }
 
 # Map Groq/OpenRouter model names → Anthropic pricing tier for cost calculations
 MODEL_TIER: dict = {
-    # Groq (fallback provider — see LLM_PROVIDER in .env)
+    # Groq (default provider)
     "openai/gpt-oss-20b":   "haiku",    # cheap tier → haiku pricing
     "openai/gpt-oss-120b":  "sonnet",   # capable tier → sonnet pricing
-    # OpenRouter (active provider)
+    # Gemini
+    "gemini-flash-lite-latest": "haiku",
+    "gemini-3.5-flash":         "sonnet",
+    # OpenRouter
     "nvidia/nemotron-nano-9b-v2:free":          "haiku",
     "nvidia/nemotron-3-super-120b-a12b:free":   "sonnet",
     # OpenRouter legacy defaults (kept in case .env still references them)

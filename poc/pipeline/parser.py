@@ -35,10 +35,35 @@ def _parse_pdf(data: bytes) -> str:
 def _parse_docx(data: bytes) -> str:
     import io
     from docx import Document
+    from docx.table import Table
 
+    # Walk paragraphs AND tables in document order. doc.paragraphs alone skips
+    # every table, and requirement docs (BRDs, SOWs) keep most of their content
+    # in tables: the MediBook BRD went from 300 to ~1,250 words with this.
     doc = Document(io.BytesIO(data))
-    paragraphs = [p.text for p in doc.paragraphs if p.text.strip()]
-    return _clean(_join(paragraphs))
+    parts = []
+    for block in doc.iter_inner_content():
+        if isinstance(block, Table):
+            parts.extend(_table_rows(block))
+        elif block.text.strip():
+            parts.append(block.text)
+    return _clean(_join(parts))
+
+
+def _table_rows(table) -> list[str]:
+    """One block per row, cells joined with ' | ', so the chunker can split a
+    long table between rows. Merged cells repeat in python-docx, so
+    consecutive duplicates are dropped."""
+    rows = []
+    for row in table.rows:
+        cells: list[str] = []
+        for cell in row.cells:
+            text = cell.text.strip()
+            if text and (not cells or cells[-1] != text):
+                cells.append(text)
+        if cells:
+            rows.append(" | ".join(cells))
+    return rows
 
 
 def _join(parts: list[str]) -> str:

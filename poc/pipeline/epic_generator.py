@@ -34,7 +34,7 @@ import time
 
 from openai import BadRequestError, RateLimitError
 
-from config import MODEL_CHEAP, REASONING_MEDIUM
+from config import MODEL_CHEAP, REASONING_LOW
 from pipeline.llm_utils import extract_usage, get_llm_client
 
 _client = get_llm_client()
@@ -88,11 +88,14 @@ async def _call_with_retry(
                     # with failed_generation: ''). Headroom fixes that.
                     max_tokens=4000,
                     response_format={"type": "json_object"},
-                    # medium, not low — mapping requirements to correct integer
-                    # indices needs more care than plain theme classification;
-                    # low caused the model to merge multiple indices into one
-                    # garbage number (e.g. [181130242732] instead of [18,11,30]).
-                    extra_body=REASONING_MEDIUM,
+                    # low, not medium. Medium was chosen earlier because low merged
+                    # indices into garbage numbers ([181130242732]); the
+                    # comma-string format + regex guard below now handles that.
+                    # Medium's reasoning grows with the requirement count: with
+                    # 110 MediBook requirements it spent 7,810 of 8,000 tokens
+                    # reasoning and returned empty JSON. Low: 4/4 runs valid,
+                    # 92-100% of requirements assigned, under 300 reasoning tokens.
+                    extra_body=REASONING_LOW,
                     messages=[
                         {"role": "system", "content": _SYSTEM_PROMPT},
                         {"role": "user", "content": prompt},

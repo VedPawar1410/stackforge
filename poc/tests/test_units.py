@@ -57,6 +57,41 @@ def test_parse_txt_returns_text():
     assert "booking" in parse(b"Patients need online booking.\n\nSMS reminders.", "txt")
 
 
+def test_parse_docx_keeps_tables_in_document_order():
+    # Regression: tables used to be dropped, losing ~73% of the MediBook BRD.
+    import io
+    from docx import Document
+
+    doc = Document()
+    doc.add_paragraph("4.1 Patient Appointment Booking")
+    table = doc.add_table(rows=2, cols=3)
+    for cell, text in zip(table.rows[0].cells, ["Req ID", "Requirement", "Priority"]):
+        cell.text = text
+    for cell, text in zip(table.rows[1].cells, ["APT-003", "Reschedule up to 2 hours before", "Must have"]):
+        cell.text = text
+    doc.add_paragraph("5. Non-Functional Requirements")
+    buf = io.BytesIO()
+    doc.save(buf)
+
+    text = parse(buf.getvalue(), "docx")
+    assert "APT-003 | Reschedule up to 2 hours before | Must have" in text
+    assert text.index("4.1 Patient") < text.index("APT-003") < text.index("5. Non-Functional")
+
+
+def test_parse_docx_drops_repeated_merged_cells():
+    import io
+    from docx import Document
+
+    doc = Document()
+    table = doc.add_table(rows=1, cols=3)
+    merged = table.rows[0].cells[0].merge(table.rows[0].cells[1])
+    merged.text = "Performance"
+    table.rows[0].cells[2].text = "Under 3 seconds"
+    buf = io.BytesIO()
+    doc.save(buf)
+    assert parse(buf.getvalue(), "docx") == "Performance | Under 3 seconds"
+
+
 # ── Dedup similarity ─────────────────────────────────────────────────────────
 
 def test_jaccard_identical_and_disjoint():
@@ -122,12 +157,14 @@ def test_validate_project_id_accepts_uuid():
     "provider, expected_url, expected_key",
     [
         ("groq", "api.groq.com", "g-key"),
+        ("gemini", "generativelanguage.googleapis.com", "gm-key"),
         ("openrouter", "openrouter.ai", "o-key"),
         ("ollama", "localhost:11434", "ollama"),
     ],
 )
 def test_each_provider_gets_its_own_url_and_key(provider, expected_url, expected_key):
-    env = {**os.environ, "LLM_PROVIDER": provider, "GROQ_API_KEY": "g-key", "OPENROUTER_API_KEY": "o-key"}
+    env = {**os.environ, "LLM_PROVIDER": provider, "GROQ_API_KEY": "g-key",
+           "GEMINI_API_KEY": "gm-key", "OPENROUTER_API_KEY": "o-key"}
     out = subprocess.run(
         [sys.executable, "-c",
          "from pipeline.llm_utils import get_llm_client; c = get_llm_client(); print(c.base_url, c.api_key)"],

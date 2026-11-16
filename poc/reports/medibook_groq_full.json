@@ -1,0 +1,111 @@
+{
+  "generated": "2026-11-16",
+  "project_id": "7e128c07-05e4-4a8c-ad7b-415afc6c6bee",
+  "pricing_usd_per_mtok": {
+    "haiku": {
+      "input": 0.1,
+      "output": 0.5
+    },
+    "sonnet": {
+      "input": 2.0,
+      "output": 10.0
+    },
+    "opus": {
+      "input": 4.0,
+      "output": 20.0
+    }
+  },
+  "counts": {
+    "documents_done": 5,
+    "clarifications": 7,
+    "epics": 6,
+    "user_stories": 30,
+    "sprints": 9,
+    "tasks": 142,
+    "requirements": 122,
+    "active_requirements": 110
+  },
+  "checklist_coverage": {
+    "covered": 43,
+    "total": 46,
+    "pct": 93.5
+  },
+  "checklist_missed": [
+    "APT-004",
+    "SEC-MFA",
+    "SEC-AUDIT"
+  ],
+  "stages": {
+    "1": {
+      "calls_recorded": 15,
+      "models": [
+        "openai/gpt-oss-120b",
+        "openai/gpt-oss-20b"
+      ],
+      "input_tokens": 29649,
+      "output_tokens": 14350,
+      "of_which_reasoning_tokens": 318,
+      "cost_usd_routed": 0.0968,
+      "cost_usd_all_opus": 0.4056,
+      "cost_usd_routed_june_2026_rates": 0.1508,
+      "cost_usd_all_opus_june_2026_rates": 1.521
+    },
+    "2": {
+      "calls_recorded": 7,
+      "models": [
+        "openai/gpt-oss-120b",
+        "openai/gpt-oss-20b"
+      ],
+      "input_tokens": 20652,
+      "output_tokens": 6850,
+      "of_which_reasoning_tokens": 385,
+      "cost_usd_routed": 0.0975,
+      "cost_usd_all_opus": 0.2196,
+      "cost_usd_routed_june_2026_rates": 0.1469,
+      "cost_usd_all_opus_june_2026_rates": 0.8235
+    },
+    "3": {
+      "calls_recorded": 31,
+      "models": [
+        "openai/gpt-oss-120b",
+        "rule-based"
+      ],
+      "input_tokens": 26888,
+      "output_tokens": 9310,
+      "of_which_reasoning_tokens": 592,
+      "cost_usd_routed": 0.1469,
+      "cost_usd_all_opus": 0.2938,
+      "cost_usd_routed_june_2026_rates": 0.2203,
+      "cost_usd_all_opus_june_2026_rates": 1.1016
+    },
+    "4": {
+      "calls_recorded": 10,
+      "models": [
+        "openai/gpt-oss-120b"
+      ],
+      "input_tokens": 6014,
+      "output_tokens": 12674,
+      "of_which_reasoning_tokens": 869,
+      "cost_usd_routed": 0.1388,
+      "cost_usd_all_opus": 0.2775,
+      "cost_usd_routed_june_2026_rates": 0.2082,
+      "cost_usd_all_opus_june_2026_rates": 1.0408
+    }
+  },
+  "totals": {
+    "input_tokens": 83203,
+    "output_tokens": 43184,
+    "cost_usd_routed": 0.48,
+    "cost_usd_all_opus": 1.1965,
+    "cost_usd_routed_june_2026_rates": 0.7262,
+    "cost_usd_all_opus_june_2026_rates": 4.4869
+  },
+  "stage4_code": {
+    "tasks_run": 10,
+    "tasks_completed": 10,
+    "files_generated": 25,
+    "lines_generated": 1109,
+    "python_files": 13,
+    "python_files_that_parse": 13
+  }
+}

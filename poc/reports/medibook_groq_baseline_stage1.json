@@ -1,0 +1,81 @@
+{
+  "generated": "2026-11-16",
+  "project_id": "8b355c56-f62f-4d55-8809-b728b0a8bee0",
+  "pricing_usd_per_mtok": {
+    "haiku": {
+      "input": 0.1,
+      "output": 0.5
+    },
+    "sonnet": {
+      "input": 2.0,
+      "output": 10.0
+    },
+    "opus": {
+      "input": 4.0,
+      "output": 20.0
+    }
+  },
+  "counts": {
+    "documents_done": 5,
+    "clarifications": 6,
+    "epics": 0,
+    "user_stories": 0,
+    "sprints": 0,
+    "tasks": 0,
+    "requirements": 84,
+    "active_requirements": 75
+  },
+  "checklist_coverage": {
+    "covered": 25,
+    "total": 46,
+    "pct": 54.3
+  },
+  "checklist_missed": [
+    "APT-001",
+    "APT-003",
+    "APT-004",
+    "APT-005",
+    "APT-006",
+    "PAT-002",
+    "PAT-003",
+    "PAT-004",
+    "PAT-006",
+    "DOC-003",
+    "DOC-006",
+    "ADM-001",
+    "ADM-002",
+    "ADM-004",
+    "NOT-001",
+    "NOT-002",
+    "NOT-003",
+    "NOT-004",
+    "NOT-005",
+    "NOT-006",
+    "NFR-SCALE"
+  ],
+  "stages": {
+    "1": {
+      "calls_recorded": 15,
+      "models": [
+        "openai/gpt-oss-120b",
+        "openai/gpt-oss-20b"
+      ],
+      "input_tokens": 22333,
+      "output_tokens": 11819,
+      "of_which_reasoning_tokens": 1758,
+      "cost_usd_routed": 0.0807,
+      "cost_usd_all_opus": 0.3257,
+      "cost_usd_routed_june_2026_rates": 0.1254,
+      "cost_usd_all_opus_june_2026_rates": 1.2214
+    }
+  },
+  "totals": {
+    "input_tokens": 22333,
+    "output_tokens": 11819,
+    "cost_usd_routed": 0.0807,
+    "cost_usd_all_opus": 0.3257,
+    "cost_usd_routed_june_2026_rates": 0.1254,
+    "cost_usd_all_opus_june_2026_rates": 1.2214
+  },
+  "stage4_code": null
+}
