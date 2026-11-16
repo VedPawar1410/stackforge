@@ -3,7 +3,9 @@
 import os
 from dotenv import load_dotenv
 
-load_dotenv(override=True)
+# Real environment variables win over .env (standard dotenv behaviour), so a
+# one-off override like `DATABASE_URL=... pytest` is never silently replaced.
+load_dotenv()
 
 DATABASE_URL: str = os.environ["DATABASE_URL"]
 

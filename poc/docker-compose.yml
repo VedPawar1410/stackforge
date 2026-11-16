@@ -1,0 +1,24 @@
+# Local Postgres for the POC. pgvector image because db/init.sql runs
+# CREATE EXTENSION vector (plain postgres:16 lacks it).
+#   docker compose up -d        start (data persists in the named volume)
+#   docker compose down         stop
+#   docker compose down -v      stop and delete all data
+services:
+  db:
+    image: pgvector/pgvector:pg16
+    container_name: stackforge-db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: stackforge
+    ports:
+      - "5432:5432"
+    volumes:
+      - stackforge-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 2s
+      retries: 30
+
+volumes:
+  stackforge-pgdata:
