@@ -20,7 +20,8 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 import httpx
 import streamlit as st
 
-API_BASE = "http://127.0.0.1:8000"
+# Override when the API isn't on the default local port (e.g. Docker or another host)
+API_BASE = os.environ.get("STACKFORGE_API_URL", "http://127.0.0.1:8000")
 
 # ─── Page config ─────────────────────────────────────────────────────────────
 

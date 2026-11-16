@@ -59,37 +59,77 @@ async def run_pipeline_for_project(project_id: str, doc_paths: list[str]) -> Non
         )
 
 
-async def ingest_document(
+def register_document(
     project_id: str,
-    client_id: str,
     file_bytes: bytes,
     filename: str,
     file_type: str,
-) -> str:
+) -> tuple[str, bool]:
     """
-    Full pipeline for a single document. Returns document ID.
-    Called by the FastAPI /documents upload endpoint.
+    Create (or reuse) the documents row for an upload, before any LLM work.
+
+    Returns (doc_id, already_done). Keyed by content hash within the project:
+      - same file already processed -> reuse its row, already_done=True
+      - same file previously failed  -> reuse its row (no duplicate rows), reset
+        it to 'processing' and clear partial output from the failed attempt
+      - new file                     -> insert a fresh row
     """
     content_hash = hashlib.sha256(file_bytes).hexdigest()
-    doc_id = str(uuid.uuid4())
-
-    # ── Step 1: Check if this exact file was already processed ──────────────
     with DB() as db:
         existing = db.fetch_one(
             "SELECT id, status FROM documents WHERE project_id = %s AND content_hash = %s",
             (project_id, content_hash),
         )
         if existing and existing["status"] == "done":
-            return existing["id"]  # skip re-processing unchanged document
+            return str(existing["id"]), True
 
+        if existing:
+            doc_id = str(existing["id"])
+            db.execute("DELETE FROM doc_chunks WHERE document_id = %s", (doc_id,))
+            db.execute(
+                "DELETE FROM requirements WHERE source_document_ids = %s::uuid[]",
+                ("{" + doc_id + "}",),
+            )
+            db.execute(
+                """
+                UPDATE documents
+                SET status = 'processing', error_message = NULL, filename = %s, uploaded_at = now()
+                WHERE id = %s
+                """,
+                (filename, doc_id),
+            )
+            return doc_id, False
+
+        doc_id = str(uuid.uuid4())
         db.execute(
             """
             INSERT INTO documents (id, project_id, filename, file_type, content_hash, status)
             VALUES (%s, %s, %s, %s, %s, 'processing')
-            ON CONFLICT DO NOTHING
             """,
             (doc_id, project_id, filename, file_type, content_hash),
         )
+        return doc_id, False
+
+
+async def ingest_document(
+    project_id: str,
+    client_id: str,
+    file_bytes: bytes,
+    filename: str,
+    file_type: str,
+    doc_id: str | None = None,
+) -> str:
+    """
+    Full pipeline for a single document. Returns document ID.
+
+    The upload route registers the document first (so it can return the real
+    id) and passes doc_id in. Callers without a doc_id (the seed script) get
+    the same registration here.
+    """
+    if doc_id is None:
+        doc_id, already_done = register_document(project_id, file_bytes, filename, file_type)
+        if already_done:
+            return doc_id  # skip re-processing unchanged document
 
     try:
         # ── Step 1: Parse ────────────────────────────────────────────────────

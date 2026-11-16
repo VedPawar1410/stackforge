@@ -119,7 +119,8 @@ docker start stackforge-db
 
 If first time:
 ```powershell
-docker run --name stackforge-db -e POSTGRES_PASSWORD=password -e POSTGRES_DB=stackforge -p 5432:5432 -d postgres:16
+# pgvector image: db/init.sql runs CREATE EXTENSION vector, which plain postgres:16 lacks
+docker run --name stackforge-db -e POSTGRES_PASSWORD=password -e POSTGRES_DB=stackforge -p 5432:5432 -d pgvector/pgvector:pg16
 ```
 
 ### 2. Configure environment

@@ -1,12 +1,15 @@
 """Routes: document upload and pipeline trigger."""
 
 import asyncio
+import logging
 
 from fastapi import APIRouter, BackgroundTasks, HTTPException, UploadFile
 
 from api.models import DocumentResponse
 from db import DB
-from pipeline.runner import ingest_document
+from pipeline.runner import ingest_document, register_document
+
+_logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/projects/{project_id}/documents", tags=["documents"])
 
@@ -45,26 +48,24 @@ async def upload_document(
         )
     client_id = str(project["client_id"])
 
-    # Kick off the pipeline in the background so the response is instant
-    background_tasks.add_task(
-        _run_pipeline_and_update_project,
-        project_id,
-        client_id,
-        file_bytes,
-        filename,
-        ext,
-    )
+    # Create the documents row now so the response carries the real id the
+    # client can poll. A re-upload of a failed file reuses that row.
+    doc_id, already_done = register_document(project_id, file_bytes, filename, ext)
 
-    # Return a minimal document stub — actual document row is created inside the pipeline
-    import hashlib, uuid, datetime
-    content_hash = hashlib.sha256(file_bytes).hexdigest()
-    return {
-        "id": uuid.uuid4(),
-        "filename": filename,
-        "file_type": ext,
-        "status": "processing",
-        "uploaded_at": datetime.datetime.utcnow(),
-    }
+    if not already_done:
+        # Kick off the pipeline in the background so the response is instant
+        background_tasks.add_task(
+            _run_pipeline_and_update_project,
+            project_id,
+            client_id,
+            file_bytes,
+            filename,
+            ext,
+            doc_id,
+        )
+
+    with DB() as db:
+        return db.fetch_one("SELECT * FROM documents WHERE id = %s", (doc_id,))
 
 
 @router.get("", response_model=list[DocumentResponse])
@@ -82,6 +83,7 @@ async def _run_pipeline_and_update_project(
     file_bytes: bytes,
     filename: str,
     file_type: str,
+    doc_id: str,
 ) -> None:
     """Background task: run pipeline, then update project status."""
     try:
@@ -91,7 +93,7 @@ async def _run_pipeline_and_update_project(
                 (project_id,),
             )
 
-        await ingest_document(project_id, client_id, file_bytes, filename, file_type)
+        await ingest_document(project_id, client_id, file_bytes, filename, file_type, doc_id)
 
         # Update project status based on live document states.
         # Count only 'processing' as still-in-flight — failed docs must not
@@ -121,7 +123,10 @@ async def _run_pipeline_and_update_project(
                 "UPDATE projects SET status = %s WHERE id = %s",
                 (new_status, project_id),
             )
-    except Exception as e:
+    except Exception:
+        # The document row already holds the error message; log the traceback
+        # too so a failed ingestion is visible in the server output.
+        _logger.exception("Ingestion failed for %s (document %s)", filename, doc_id)
         with DB() as db:
             db.execute(
                 "UPDATE projects SET status = 'failed' WHERE id = %s",
