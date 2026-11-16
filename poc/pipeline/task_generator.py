@@ -28,16 +28,18 @@ TOKEN OPTIMIZATION:
 
 import asyncio
 import json
+import logging
 import random
 import time
 
-from openai import RateLimitError
+from openai import BadRequestError, RateLimitError
 
-from config import MODEL_CAPABLE
+from config import MODEL_CAPABLE, REASONING_LOW
 from pipeline.llm_utils import extract_usage, get_llm_client
 from rag.search import hybrid_search
 
 _client = get_llm_client()
+_logger = logging.getLogger(__name__)
 
 _VALID_TASK_TYPES = frozenset(
     {"backend", "frontend", "testing", "devops", "design", "documentation"}
@@ -109,10 +111,12 @@ Output:
 
 _RAG_CONTEXT_TOP_K = 3
 
-# Groq free tier: 12,000 TPM on llama-3.3-70b-versatile. Each story call uses
-# ~1,500 tokens. With Semaphore(2) and a 15s hold after each call we get
-# ~2 releases per 18s = ~6.7 calls/min = ~10,000 TPM — safely under the cap.
-_SEMAPHORE_SIZE = 2
+# Stale note: this used to target llama-3.3-70b-versatile's 12K TPM cap.
+# That model is deprecated — MODEL_CAPABLE is now gpt-oss-120b, confirmed via
+# Groq dashboard at 8K TPM (see STAGE4_THROTTLE_DELAY_S in config.py for the
+# same limit). Semaphore(1) + 15s hold: ~4 calls/min * ~1500 tok ≈ 6K TPM,
+# ~75% of the 8K cap.
+_SEMAPHORE_SIZE = 1
 _THROTTLE_DELAY_S = 15.0
 
 
@@ -156,13 +160,20 @@ async def _generate_for_story(
     prompt += "\n\nGenerate 3-5 development tasks for this story."
 
     for attempt in range(retries):
-        try:
-            async with semaphore:
+        # Semaphore wraps the whole attempt — call plus any backoff sleep on
+        # failure — not just the network call. A failed attempt that released
+        # the slot before backing off would let the next queued story fire
+        # immediately, defeating the throttle exactly like the summarizer.py
+        # bug did: many stories round-robining failed requests with near-zero
+        # spacing, indistinguishable from unthrottled concurrency.
+        async with semaphore:
+            try:
                 t0 = time.monotonic()
                 response = await _client.chat.completions.create(
                     model=MODEL_CAPABLE,
                     max_tokens=1000,
                     response_format={"type": "json_object"},
+                    extra_body=REASONING_LOW,
                     messages=[
                         {"role": "system", "content": _SYSTEM_PROMPT},
                         {"role": "user", "content": prompt},
@@ -174,49 +185,62 @@ async def _generate_for_story(
                 # doesn't immediately saturate the TPM window.
                 await asyncio.sleep(_THROTTLE_DELAY_S)
 
-            in_tok, out_tok, think_tok = extract_usage(response)
-            content = response.choices[0].message.content
+                in_tok, out_tok, think_tok = extract_usage(response)
+                content = response.choices[0].message.content
 
-            try:
-                parsed = json.loads(content)
-                if isinstance(parsed, dict):
-                    tasks = parsed.get("tasks", [])
-                elif isinstance(parsed, list):
-                    tasks = parsed
-                else:
-                    tasks = []
-            except json.JSONDecodeError:
-                tasks = []
-
-            # Normalise and validate fields
-            validated = []
-            for t in tasks:
-                if not isinstance(t, dict):
-                    continue
-                task_type = t.get("task_type", "backend")
-                if task_type not in _VALID_TASK_TYPES:
-                    task_type = "backend"
                 try:
-                    hours = float(t.get("estimated_hours", 4.0))
-                    hours = max(0.5, min(16.0, hours))
-                except (TypeError, ValueError):
-                    hours = 4.0
-                validated.append({
-                    "title": t.get("title", "Untitled Task"),
-                    "description": t.get("description", ""),
-                    "task_type": task_type,
-                    "estimated_hours": hours,
-                })
+                    # content can be None (model routed answer into a hidden
+                    # reasoning field) — json.loads(None) raises TypeError,
+                    # not JSONDecodeError, so both are caught here.
+                    parsed = json.loads(content)
+                    if isinstance(parsed, dict):
+                        tasks = parsed.get("tasks", [])
+                    elif isinstance(parsed, list):
+                        tasks = parsed
+                    else:
+                        tasks = []
+                except (json.JSONDecodeError, TypeError):
+                    tasks = []
 
-            return validated, in_tok, out_tok, think_tok, duration_ms
+                # Normalise and validate fields
+                validated = []
+                for t in tasks:
+                    if not isinstance(t, dict):
+                        continue
+                    task_type = t.get("task_type", "backend")
+                    if task_type not in _VALID_TASK_TYPES:
+                        task_type = "backend"
+                    try:
+                        hours = float(t.get("estimated_hours", 4.0))
+                        hours = max(0.5, min(16.0, hours))
+                    except (TypeError, ValueError):
+                        hours = 4.0
+                    validated.append({
+                        "title": t.get("title", "Untitled Task"),
+                        "description": t.get("description", ""),
+                        "task_type": task_type,
+                        "estimated_hours": hours,
+                    })
 
-        except RateLimitError:
-            if attempt == retries - 1:
-                raise
-            # Longer backoff — Groq TPM window resets every 60s so we need
-            # to wait long enough for capacity to free up.
-            wait = min(60.0, (2 ** attempt) * 5) + random.uniform(0, 2)
-            await asyncio.sleep(wait)
+                return validated, in_tok, out_tok, think_tok, duration_ms
+
+            except RateLimitError:
+                if attempt == retries - 1:
+                    raise
+                # Longer backoff — Groq TPM window resets every 60s so we need
+                # to wait long enough for capacity to free up. Still inside the
+                # semaphore, so no other story can sneak a request in here.
+                wait = min(60.0, (2 ** attempt) * 5) + random.uniform(0, 2)
+                await asyncio.sleep(wait)
+            except BadRequestError as exc:
+                if attempt == retries - 1:
+                    raise
+                _logger.warning(
+                    "Task generation: Groq rejected model output as invalid JSON "
+                    "(attempt %d/%d): %s", attempt + 1, retries, exc,
+                )
+                wait = (2 ** attempt) + random.uniform(0, 1)
+                await asyncio.sleep(wait)
 
     return [], 0, 0, 0, 0
 

@@ -24,9 +24,17 @@ import time
 import uuid
 from datetime import datetime, timezone
 
-from openai import RateLimitError
+from openai import BadRequestError, RateLimitError
 
-from config import MODEL_CAPABLE, STAGE4_MAX_PARALLEL, STAGE4_THROTTLE_DELAY_S, STAGE4_WORKSPACE_ROOT
+from config import (
+    LLM_PROVIDER,
+    MODEL_CAPABLE,
+    OLLAMA_NUM_CTX,
+    REASONING_LOW,
+    STAGE4_MAX_PARALLEL,
+    STAGE4_THROTTLE_DELAY_S,
+    STAGE4_WORKSPACE_ROOT,
+)
 from db import DB
 from pipeline.llm_utils import extract_usage, get_llm_client
 from pipeline.workspace_builder import build_workspace
@@ -229,6 +237,10 @@ async def _generate_code_with_groq(
     with open(context_path, encoding="utf-8") as f:
         issue_context = f.read()
 
+    extra_body = dict(REASONING_LOW)
+    if LLM_PROVIDER == "ollama":
+        extra_body["options"] = {"num_ctx": OLLAMA_NUM_CTX}
+
     for attempt in range(_MAX_RETRIES):
         try:
             async with semaphore:
@@ -237,6 +249,7 @@ async def _generate_code_with_groq(
                     model=MODEL_CAPABLE,
                     max_tokens=2500,
                     response_format={"type": "json_object"},
+                    extra_body=extra_body,
                     messages=[
                         {"role": "system", "content": _CODE_GEN_SYSTEM_PROMPT},
                         {"role": "user", "content": issue_context},
@@ -268,6 +281,17 @@ async def _generate_code_with_groq(
             _logger.warning(
                 "Groq rate limit hit for task %s (attempt %d/%d), waiting %.1fs",
                 task.get("id", "?"), attempt + 1, _MAX_RETRIES, wait,
+            )
+            await asyncio.sleep(wait)
+        except BadRequestError as exc:
+            # gpt-oss reasoning model: Groq rejects truncated/non-JSON output
+            # server-side before it's parseable. Retry — usually transient.
+            if attempt == _MAX_RETRIES - 1:
+                raise
+            wait = (2 ** attempt) + random.uniform(0, 1)
+            _logger.warning(
+                "Groq rejected model output as invalid JSON for task %s "
+                "(attempt %d/%d): %s", task.get("id", "?"), attempt + 1, _MAX_RETRIES, exc,
             )
             await asyncio.sleep(wait)
 

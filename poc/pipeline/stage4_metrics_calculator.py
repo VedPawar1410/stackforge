@@ -8,6 +8,7 @@ tokens_available=True so the UI shows actual input/output token totals.
 import json
 import logging
 
+from config import MODEL_TIER
 from db import DB
 
 _logger = logging.getLogger(__name__)
@@ -40,7 +41,7 @@ def get_metrics_report(project_id: str) -> dict:
                 ts.id           AS session_id,
                 ts.task_id,
                 ts.status,
-                ts.duration_ms,
+                EXTRACT(EPOCH FROM (ts.completed_at - ts.started_at)) * 1000 AS duration_ms,
                 ts.generated_files,
                 ts.error_message,
                 t.title         AS task_title,
@@ -68,9 +69,21 @@ def get_metrics_report(project_id: str) -> dict:
             (project_id,),
         )
 
+        model_rows = db.fetch_all(
+            "SELECT DISTINCT model FROM task_usage WHERE project_id = %s AND stage = '4'",
+            (project_id,),
+        )
+
     total_tasks = int(total_row["cnt"]) if total_row else 0
     actual_input_tokens  = int(usage_row["total_in"])  if usage_row else 0
     actual_output_tokens = int(usage_row["total_out"]) if usage_row else 0
+
+    models_used = [r["model"] for r in model_rows]
+    # A run is only cost-representative if every model it used maps to a
+    # known Anthropic pricing tier (see MODEL_TIER in config.py). Local
+    # Ollama models are deliberately left out of that map — flag them here
+    # instead of letting the report imply real savings numbers.
+    representative = bool(models_used) and all(m in MODEL_TIER for m in models_used)
 
     completed = sum(1 for s in sessions if s["status"] == "completed")
     failed    = sum(1 for s in sessions if s["status"] == "failed")
@@ -115,5 +128,7 @@ def get_metrics_report(project_id: str) -> dict:
         "tokens_available":     True,
         "actual_input_tokens":  actual_input_tokens,
         "actual_output_tokens": actual_output_tokens,
+        "representative":       representative,
+        "models_used":          models_used,
         "task_breakdown":       breakdown,
     }

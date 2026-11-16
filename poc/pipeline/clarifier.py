@@ -10,9 +10,9 @@ import json
 import logging
 import random
 
-from openai import RateLimitError
+from openai import BadRequestError, RateLimitError
 
-from config import MODEL_CHEAP
+from config import MODEL_CHEAP, REASONING_LOW
 from pipeline.llm_utils import extract_usage, get_llm_client
 from pipeline.metrics_common import UsageTotals
 
@@ -53,6 +53,7 @@ async def generate_clarifications(
                 model=MODEL_CHEAP,
                 max_tokens=1024,
                 response_format={"type": "json_object"},
+                extra_body=REASONING_LOW,
                 messages=[
                     {"role": "system", "content": _SYSTEM_PROMPT},
                     {
@@ -64,8 +65,11 @@ async def generate_clarifications(
             in_tok, out_tok, think_tok = extract_usage(response)
             usage = UsageTotals().add(in_tok, out_tok, think_tok)
             try:
+                # content can be None (model routed answer into a hidden
+                # reasoning field) — json.loads(None) raises TypeError, not
+                # JSONDecodeError, so both are caught here.
                 data = json.loads(response.choices[0].message.content)
-            except json.JSONDecodeError:
+            except (json.JSONDecodeError, TypeError):
                 data = {}
             clarifications = data.get("clarifications", [])
             _VALID_PRIORITIES = {"high", "medium", "low"}
@@ -80,6 +84,15 @@ async def generate_clarifications(
         except RateLimitError:
             if attempt == retries - 1:
                 raise
+            wait = (2 ** attempt) + random.uniform(0, 1)
+            await asyncio.sleep(wait)
+        except BadRequestError as exc:
+            if attempt == retries - 1:
+                raise
+            _logger.warning(
+                "Clarification generation: Groq rejected model output as invalid "
+                "JSON (attempt %d/%d): %s", attempt + 1, retries, exc,
+            )
             wait = (2 ** attempt) + random.uniform(0, 1)
             await asyncio.sleep(wait)
     return [], UsageTotals()

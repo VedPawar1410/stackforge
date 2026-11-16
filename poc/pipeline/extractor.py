@@ -15,9 +15,9 @@ import json
 import logging
 import random
 
-from openai import RateLimitError
+from openai import BadRequestError, RateLimitError
 
-from config import EXTRACTOR_BATCH_SIZE, MODEL_CAPABLE, SDLC_TOPICS
+from config import EXTRACTOR_BATCH_SIZE, MODEL_CAPABLE, REASONING_LOW, SDLC_TOPICS
 from pipeline.llm_utils import extract_usage, get_llm_client
 from pipeline.metrics_common import UsageTotals
 
@@ -62,6 +62,18 @@ _SYSTEM_PROMPT = (
 _VALID_SDLC_TOPICS = set(SDLC_TOPICS)
 _VALID_REQ_TYPES = {"functional", "non_functional", "constraint", "assumption"}
 
+# MODEL_CAPABLE is gpt-oss-120b — Groq dashboard confirms 8K TPM (same cap
+# task_generator.py, story_generator.py, and Stage 4 hit). This file had NO
+# throttle at all — every batch fired concurrently via asyncio.gather with
+# no semaphore, no hold, no TPM-aware backoff. Usually safe only because
+# EXTRACTOR_BATCH_SIZE=10 keeps batch counts small; a bigger document blows
+# this exactly like the unthrottled summarizer.py did. A combined-summaries
+# batch (up to 10 summaries) plus max_tokens=2048 output can run
+# ~2500-3500 tokens/call. Semaphore(1) + 35s hold: ~1.7 calls/min * ~3500 tok
+# ≈ 6K TPM, ~75% of the cap.
+_SEMAPHORE_SIZE = 1
+_THROTTLE_DELAY_S = 35.0
+
 
 class ExtractionError(RuntimeError):
     """Raised when all extraction batches fail to produce any requirements."""
@@ -70,6 +82,7 @@ class ExtractionError(RuntimeError):
 async def _extract_batch(
     batch_summaries: list[str],
     batch_index: int,
+    semaphore: asyncio.Semaphore,
     retries: int = 4,
 ) -> tuple[list[dict], int, int, int]:
     """Extract requirements from a single batch of summaries.
@@ -79,37 +92,62 @@ async def _extract_batch(
     """
     combined = "\n\n---\n\n".join(batch_summaries)
     for attempt in range(retries):
-        try:
-            response = await _client.chat.completions.create(
-                model=MODEL_CAPABLE,
-                max_tokens=2048,
-                response_format={"type": "json_object"},
-                messages=[
-                    {"role": "system", "content": _SYSTEM_PROMPT},
-                    {
-                        "role": "user",
-                        "content": f"Extract all requirements from these document summaries:\n\n{combined}",
-                    },
-                ],
-            )
-            in_tok, out_tok, think_tok = extract_usage(response)
+        # Semaphore wraps the whole attempt — call plus any backoff sleep on
+        # failure — not just the network call. See summarizer.py for why the
+        # ordering matters: releasing the slot before backing off lets the
+        # next queued batch fire immediately, defeating the throttle.
+        async with semaphore:
             try:
-                data = json.loads(response.choices[0].message.content)
-            except json.JSONDecodeError as exc:
-                raw_snippet = response.choices[0].message.content[:200]
-                _logger.warning(
-                    "Batch %d: JSON parse failed (%s). Raw response start: %s",
-                    batch_index,
-                    exc,
-                    raw_snippet,
+                response = await _client.chat.completions.create(
+                    model=MODEL_CAPABLE,
+                    max_tokens=2048,
+                    response_format={"type": "json_object"},
+                    extra_body=REASONING_LOW,
+                    messages=[
+                        {"role": "system", "content": _SYSTEM_PROMPT},
+                        {
+                            "role": "user",
+                            "content": f"Extract all requirements from these document summaries:\n\n{combined}",
+                        },
+                    ],
                 )
-                return [], in_tok, out_tok, think_tok
-            return data.get("requirements", []), in_tok, out_tok, think_tok
-        except RateLimitError:
-            if attempt == retries - 1:
-                raise
-            wait = (2 ** attempt) + random.uniform(0, 1)
-            await asyncio.sleep(wait)
+                # Hold the slot after the call completes so the next queued
+                # batch doesn't fire immediately and burst the TPM window.
+                await asyncio.sleep(_THROTTLE_DELAY_S)
+
+                in_tok, out_tok, think_tok = extract_usage(response)
+                content = response.choices[0].message.content
+                try:
+                    data = json.loads(content)
+                except (json.JSONDecodeError, TypeError) as exc:
+                    # content can be None (model routed everything into a
+                    # hidden reasoning field) — json.loads(None) raises
+                    # TypeError, not JSONDecodeError, so both are caught here.
+                    raw_snippet = content[:200] if content else "<empty>"
+                    _logger.warning(
+                        "Batch %d: JSON parse failed (%s). Raw response start: %s",
+                        batch_index,
+                        exc,
+                        raw_snippet,
+                    )
+                    return [], in_tok, out_tok, think_tok
+                return data.get("requirements", []), in_tok, out_tok, think_tok
+            except RateLimitError:
+                if attempt == retries - 1:
+                    raise
+                wait = min(60.0, (2 ** attempt) * 5) + random.uniform(0, 2)
+                await asyncio.sleep(wait)
+            except BadRequestError as exc:
+                # gpt-oss reasoning model: Groq rejects truncated/non-JSON output
+                # server-side before it's even parseable. Retry — usually transient.
+                if attempt == retries - 1:
+                    raise
+                _logger.warning(
+                    "Batch %d: Groq rejected model output as invalid JSON (attempt %d/%d): %s",
+                    batch_index, attempt + 1, retries, exc,
+                )
+                wait = (2 ** attempt) + random.uniform(0, 1)
+                await asyncio.sleep(wait)
     return [], 0, 0, 0
 
 
@@ -132,8 +170,11 @@ async def extract_requirements(
     total_batches = len(batches)
     _logger.info("Extractor: %d summaries → %d batch(es)", len(summaries), total_batches)
 
+    # Semaphore created here so it belongs to the current event loop, shared
+    # across all parallel batch calls to respect Groq's 8K TPM cap.
+    semaphore = asyncio.Semaphore(_SEMAPHORE_SIZE)
     batch_results = await asyncio.gather(*[
-        _extract_batch(batch, idx + 1) for idx, batch in enumerate(batches)
+        _extract_batch(batch, idx + 1, semaphore) for idx, batch in enumerate(batches)
     ])
 
     reqs: list[dict] = []

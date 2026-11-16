@@ -16,14 +16,66 @@ LLM_PROVIDER: str = os.environ.get("LLM_PROVIDER", "groq")
 if LLM_PROVIDER == "openrouter":
     LLM_API_KEY: str = OPENROUTER_API_KEY
     LLM_BASE_URL: str = "https://openrouter.ai/api/v1"
-    # Override via .env; defaults map to haiku/sonnet tier equivalents
-    MODEL_CHEAP: str = os.environ.get("OPENROUTER_MODEL_CHEAP", "meta-llama/llama-3.1-8b-instruct:free")
-    MODEL_CAPABLE: str = os.environ.get("OPENROUTER_MODEL_CAPABLE", "meta-llama/llama-3.3-70b-instruct")
+    # Override via .env; defaults are free-tier NVIDIA Nemotron models — both
+    # confirmed to support structured_outputs (response_format=json_object),
+    # unlike Groq's gpt-oss models which intermittently truncated/malformed
+    # JSON under the same setting. No per-model TPM cap on OpenRouter free
+    # tier either (only a global 20 req/min + 50-or-1000 req/day account cap).
+    MODEL_CHEAP: str = os.environ.get("OPENROUTER_MODEL_CHEAP", "nvidia/nemotron-nano-9b-v2:free")
+    MODEL_CAPABLE: str = os.environ.get("OPENROUTER_MODEL_CAPABLE", "nvidia/nemotron-3-super-120b-a12b:free")
+elif LLM_PROVIDER == "ollama":
+    # Local dev/testing only — no rate limits, no cost, but NOT a stand-in for
+    # any Anthropic pricing tier. Deliberately excluded from MODEL_TIER below
+    # so stage4_metrics_calculator.py can flag these runs as non-representative
+    # rather than silently reporting fake savings numbers.
+    LLM_API_KEY = "ollama"  # dummy — Ollama's OpenAI-compat endpoint ignores auth
+    LLM_BASE_URL = "http://localhost:11434/v1"
+    MODEL_CHEAP: str = os.environ.get("OLLAMA_MODEL_CHEAP", "qwen2.5-coder:3b")
+    MODEL_CAPABLE: str = os.environ.get("OLLAMA_MODEL_CAPABLE", "qwen2.5-coder:3b")
 else:  # groq
     LLM_API_KEY = GROQ_API_KEY
     LLM_BASE_URL = "https://api.groq.com/openai/v1"
     MODEL_CHEAP   = "openai/gpt-oss-20b"    # replaces deprecated llama-3.1-8b-instant
     MODEL_CAPABLE = "openai/gpt-oss-120b"   # replaces deprecated llama-3.3-70b-versatile
+
+# Reasoning-effort request shape differs by provider. Groq/OpenAI use a flat
+# "reasoning_effort" string; OpenRouter's unified API requires a nested
+# {"reasoning": {"effort": ...}} object and silently ignores the flat form
+# (confirmed via OpenRouter docs) — no error, it just leaves the model to
+# pick its own reasoning behavior, which can route the whole answer into a
+# hidden reasoning field and leave message.content empty/None.
+#
+# On OpenRouter, "low" still wasn't low enough — NVIDIA Nemotron is a hybrid
+# reasoning model that burns real tokens on internal reasoning even at "low"
+# effort, eating into max_tokens before it writes the visible JSON (observed
+# as frequent empty content / truncated "Unterminated string" JSON errors).
+# These pipeline tasks are pure classification/extraction — no chain-of-
+# thought needed — so effort="none" is used instead, which OpenRouter
+# documents as fully disabling reasoning token spend.
+if LLM_PROVIDER == "openrouter":
+    REASONING_LOW: dict = {"reasoning": {"effort": "none"}}
+    REASONING_MEDIUM: dict = {"reasoning": {"effort": "none"}}
+elif LLM_PROVIDER == "ollama":
+    # qwen2.5-coder is not a reasoning model — send nothing rather than risk
+    # Ollama's OpenAI-compat layer choking on an unrecognized field.
+    REASONING_LOW = {}
+    REASONING_MEDIUM = {}
+else:
+    REASONING_LOW = {"reasoning_effort": "low"}
+    REASONING_MEDIUM = {"reasoning_effort": "medium"}
+
+# Per-call post-success throttle hold. Groq's gpt-oss models cap at a tight
+# 8K TPM — each pipeline file hand-tunes its own hold (15-35s) around that
+# ceiling and those values are left as-is below. OpenRouter's free tier has
+# NO token-per-minute cap at all, only a flat 20 req/min account limit — a
+# 15-35s hold there is pure overhead, and may be long enough to let a
+# free/shared model instance go idle and cold-start on the next call (empty
+# content on first attempt, succeeds on retry — observed repeatedly).
+# LLM_THROTTLE_DELAY_S is None on Groq so every file keeps its existing
+# hand-tuned constant; set to a real value only for OpenRouter, where one
+# shared number is safe for every file since there's no TPM budget to size
+# per max_tokens. 4s comfortably clears the 60/20=3s minimum RPM spacing.
+LLM_THROTTLE_DELAY_S: float | None = 4.0 if LLM_PROVIDER == "openrouter" else None
 
 # Chunking
 CHUNK_TARGET_WORDS: int = 275  # target ~250-300 words per chunk
@@ -79,11 +131,15 @@ PRICING: dict = {
     "opus":   {"input": 15.00, "output": 75.00},   # claude-opus-4-8
 }
 
-# Map Groq model names → Anthropic pricing tier for cost calculations
+# Map Groq/OpenRouter model names → Anthropic pricing tier for cost calculations
 MODEL_TIER: dict = {
+    # Groq (fallback provider — see LLM_PROVIDER in .env)
     "openai/gpt-oss-20b":   "haiku",    # cheap tier → haiku pricing
     "openai/gpt-oss-120b":  "sonnet",   # capable tier → sonnet pricing
-    # OpenRouter fallback entries (keep in sync if switching providers)
+    # OpenRouter (active provider)
+    "nvidia/nemotron-nano-9b-v2:free":          "haiku",
+    "nvidia/nemotron-3-super-120b-a12b:free":   "sonnet",
+    # OpenRouter legacy defaults (kept in case .env still references them)
     "meta-llama/llama-3.1-8b-instruct:free": "haiku",
     "meta-llama/llama-3.3-70b-instruct":     "sonnet",
 }
@@ -107,7 +163,13 @@ STAGE4_MAX_PARALLEL: int = int(os.environ.get("STAGE4_MAX_PARALLEL", "1"))
 
 # Seconds to hold the semaphore slot after each Groq call completes. This
 # spreads releases across time so concurrent waiters don't burst the TPM window.
+# For Ollama (no rate limit) set STAGE4_THROTTLE_DELAY_S=0 in .env.
 STAGE4_THROTTLE_DELAY_S: float = float(os.environ.get("STAGE4_THROTTLE_DELAY_S", "30.0"))
+
+# Ollama's default context window (2048-4096) truncates Stage 4's
+# issue_context.md prompt + generated-code response. Only read when
+# LLM_PROVIDER == "ollama"; harmless to define otherwise.
+OLLAMA_NUM_CTX: int = int(os.environ.get("OLLAMA_NUM_CTX", "8192"))
 
 # SDLC topic taxonomy used for requirement classification
 SDLC_TOPICS: list[str] = [

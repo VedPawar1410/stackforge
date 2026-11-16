@@ -35,13 +35,16 @@ TOKEN OPTIMIZATION:
 
 import asyncio
 import json
+import logging
 import random
 import time
 
-from openai import RateLimitError
+from openai import BadRequestError, RateLimitError
 
-from config import MODEL_CAPABLE
+from config import MODEL_CAPABLE, REASONING_LOW
 from pipeline.llm_utils import extract_usage, get_llm_client
+
+_logger = logging.getLogger(__name__)
 
 _client = get_llm_client()
 
@@ -136,6 +139,16 @@ Output:
 ]
 """
 
+# MODEL_CAPABLE is gpt-oss-120b — Groq dashboard confirms 8K TPM (same cap
+# task_generator.py and Stage 4 hit). Per-epic prompt (reqs + global
+# constraints + clarification answers) plus max_tokens=2000 output can run
+# ~2500-3500 tokens/call. Old Semaphore(5) with no post-call hold had no
+# defense against that at all — 5 concurrent calls alone could exceed 8K TPM
+# in one burst. Semaphore(1) + 35s hold: ~1.7 calls/min * ~3500 tok ≈ 6K TPM,
+# ~75% of the cap.
+_SEMAPHORE_SIZE = 1
+_THROTTLE_DELAY_S = 35.0
+
 
 async def _generate_for_epic(
     epic: dict,
@@ -171,7 +184,7 @@ async def _generate_for_epic(
     ]
 
     if not epic_reqs:
-        return [], 0, 0, 0
+        return [], 0, 0, 0, 0
 
     # Include key_specifics (verbatim measurements/terms) after each requirement
     # description so the model can anchor ACs to specific client-stated values.
@@ -223,48 +236,71 @@ async def _generate_for_epic(
             )
 
     for attempt in range(retries):
-        try:
-            async with semaphore:
+        # Semaphore wraps the whole attempt — call plus any backoff sleep on
+        # failure — not just the network call. See task_generator.py /
+        # summarizer.py for why: releasing the slot before backing off lets
+        # the next queued epic fire immediately, defeating the throttle.
+        async with semaphore:
+            try:
                 t0 = time.monotonic()
                 response = await _client.chat.completions.create(
                     model=MODEL_CAPABLE,
                     max_tokens=2000,
                     response_format={"type": "json_object"},
+                    extra_body=REASONING_LOW,
                     messages=[
                         {"role": "system", "content": _SYSTEM_PROMPT},
                         {"role": "user", "content": prompt},
                     ],
                 )
                 duration_ms = int((time.monotonic() - t0) * 1000)
+                # Hold the slot after the call completes so the next queued
+                # epic doesn't fire immediately and burst the TPM window.
+                await asyncio.sleep(_THROTTLE_DELAY_S)
 
-            in_tok, out_tok, think_tok = extract_usage(response)
-            content = response.choices[0].message.content
-            try:
-                parsed = json.loads(content)
-                if isinstance(parsed, list):
-                    stories = parsed
-                elif isinstance(parsed, dict):
-                    stories = next((v for v in parsed.values() if isinstance(v, list)), [])
-                else:
+                in_tok, out_tok, think_tok = extract_usage(response)
+                content = response.choices[0].message.content
+                try:
+                    # content can be None (model routed answer into a hidden
+                    # reasoning field) — json.loads(None) raises TypeError,
+                    # not JSONDecodeError, so both are caught here.
+                    parsed = json.loads(content)
+                    if isinstance(parsed, list):
+                        stories = parsed
+                    elif isinstance(parsed, dict):
+                        stories = next((v for v in parsed.values() if isinstance(v, list)), [])
+                    else:
+                        stories = []
+                except (json.JSONDecodeError, TypeError):
                     stories = []
-            except json.JSONDecodeError:
-                stories = []
 
-            # Ensure required keys
-            for s in stories:
-                s.setdefault("title", "Untitled Story")
-                s.setdefault("description", "")
-                s.setdefault("acceptance_criteria", [])
-                s.setdefault("story_points", None)
-                s.setdefault("assignee", None)
+                # Ensure required keys
+                for s in stories:
+                    s.setdefault("title", "Untitled Story")
+                    s.setdefault("description", "")
+                    s.setdefault("acceptance_criteria", [])
+                    s.setdefault("story_points", None)
+                    s.setdefault("assignee", None)
 
-            return stories, in_tok, out_tok, think_tok, duration_ms
+                return stories, in_tok, out_tok, think_tok, duration_ms
 
-        except RateLimitError:
-            if attempt == retries - 1:
-                raise
-            wait = (2 ** attempt) + random.uniform(0, 1)
-            await asyncio.sleep(wait)
+            except RateLimitError:
+                if attempt == retries - 1:
+                    raise
+                # Longer backoff — Groq's per-minute window needs real time to
+                # free up capacity. Still inside the semaphore, so no other
+                # epic can sneak a request in during this wait.
+                wait = min(60.0, (2 ** attempt) * 5) + random.uniform(0, 2)
+                await asyncio.sleep(wait)
+            except BadRequestError as exc:
+                if attempt == retries - 1:
+                    raise
+                _logger.warning(
+                    "Story generation: Groq rejected model output as invalid JSON "
+                    "(attempt %d/%d): %s", attempt + 1, retries, exc,
+                )
+                wait = (2 ** attempt) + random.uniform(0, 1)
+                await asyncio.sleep(wait)
 
     return [], 0, 0, 0, 0
 
@@ -295,8 +331,8 @@ async def generate_stories_for_all_epics(
     answers = clarification_answers or []
 
     # Semaphore created here — belongs to current event loop, shared across
-    # all parallel epic calls to respect the Groq 30 req/min rate limit.
-    semaphore = asyncio.Semaphore(5)
+    # all parallel epic calls to respect Groq's 8K TPM cap on this model.
+    semaphore = asyncio.Semaphore(_SEMAPHORE_SIZE)
 
     tasks = [
         _generate_for_epic(epic, requirements_by_id, semaphore, constraints, answers)

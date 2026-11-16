@@ -31,9 +31,9 @@ import os
 import random
 import re
 
-from openai import RateLimitError
+from openai import BadRequestError, RateLimitError
 
-from config import MODEL_CHEAP, STITCH_API_KEY
+from config import MODEL_CHEAP, REASONING_LOW, STITCH_API_KEY
 from db import DB
 from pipeline.doc_writer import get_doc_path, get_output_dir
 from pipeline.llm_utils import get_llm_client
@@ -94,11 +94,15 @@ async def extract_screens(design_md_content: str) -> list[dict]:
                 model=MODEL_CHEAP,
                 max_tokens=800,
                 response_format={"type": "json_object"},
+                extra_body=REASONING_LOW,
                 messages=[
                     {"role": "system", "content": _EXTRACT_SYSTEM},
                     {"role": "user", "content": f"Design requirements:\n\n{design_md_content}"},
                 ],
             )
+            # content can be None (model routed answer into a hidden
+            # reasoning field) — json.loads(None) raises TypeError, not
+            # JSONDecodeError, so both are caught below.
             data = json.loads(response.choices[0].message.content)
             screens = data.get("screens", [])
             if isinstance(screens, list) and screens:
@@ -107,8 +111,18 @@ async def extract_screens(design_md_content: str) -> list[dict]:
             if attempt == 3:
                 raise
             await asyncio.sleep((2 ** attempt) + random.uniform(0, 1))
-        except (json.JSONDecodeError, KeyError) as e:
+        except (json.JSONDecodeError, KeyError, TypeError) as e:
             _logger.warning("Screen extraction parse error (attempt %d): %s", attempt + 1, e)
+        except BadRequestError as e:
+            # gpt-oss reasoning model: Groq rejects truncated/non-JSON output
+            # server-side before it's parseable. Retry — usually transient.
+            if attempt == 3:
+                raise
+            _logger.warning(
+                "Screen extraction: Groq rejected model output as invalid JSON "
+                "(attempt %d/4): %s", attempt + 1, e,
+            )
+            await asyncio.sleep((2 ** attempt) + random.uniform(0, 1))
     return []
 
 

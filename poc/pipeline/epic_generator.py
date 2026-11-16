@@ -29,11 +29,12 @@ import asyncio
 import json
 import logging
 import random
+import re
 import time
 
-from openai import RateLimitError
+from openai import BadRequestError, RateLimitError
 
-from config import MODEL_CHEAP
+from config import MODEL_CHEAP, REASONING_MEDIUM
 from pipeline.llm_utils import extract_usage, get_llm_client
 
 _client = get_llm_client()
@@ -51,7 +52,7 @@ Schema:
     "theme": "short_snake_case_theme",
     "title": "Epic title (5-8 words)",
     "description": "2-3 sentence description of what this epic covers and why it matters",
-    "requirement_ids": [1, 3, 7]
+    "requirement_ids": "1,3,7"
   }
 ]
 
@@ -59,7 +60,9 @@ Rules:
 - Every requirement must appear in exactly one epic
 - Aim for 4-6 epics for most projects (3 minimum, 8 maximum)
 - Epic titles must be action-oriented (e.g. "User Authentication & Access Control")
-- requirement_ids must be integer indices from the input list (the number before the colon on each line)
+- requirement_ids is a comma-separated STRING of integer indices from the input
+  list (the number before the colon on each line), e.g. "1,3,7" — NOT a JSON
+  array of numbers.
 """
 
 
@@ -68,13 +71,28 @@ async def _call_with_retry(
 ) -> tuple[str, int, int, int, int]:
     """Returns (content, input_tokens, output_tokens, thinking_tokens, duration_ms)."""
     for attempt in range(retries):
-        try:
-            async with semaphore:
+        # Semaphore wraps the whole attempt — call plus any backoff sleep on
+        # failure — not just the network call. generate_epics() only ever
+        # makes one call per project, so this doesn't gate concurrency today,
+        # but keeps the pattern consistent with every other retry loop in the
+        # pipeline (see summarizer.py for why the ordering matters).
+        async with semaphore:
+            try:
                 t0 = time.monotonic()
                 response = await _client.chat.completions.create(
                     model=MODEL_CHEAP,
-                    max_tokens=1500,
+                    # 4000, not 1500 — reasoning tokens share the same max_tokens
+                    # budget as the visible output on Groq. At medium effort the
+                    # model was spending the whole 1500 on hidden reasoning and
+                    # returning an empty completion (400 json_validate_failed
+                    # with failed_generation: ''). Headroom fixes that.
+                    max_tokens=4000,
                     response_format={"type": "json_object"},
+                    # medium, not low — mapping requirements to correct integer
+                    # indices needs more care than plain theme classification;
+                    # low caused the model to merge multiple indices into one
+                    # garbage number (e.g. [181130242732] instead of [18,11,30]).
+                    extra_body=REASONING_MEDIUM,
                     messages=[
                         {"role": "system", "content": _SYSTEM_PROMPT},
                         {"role": "user", "content": prompt},
@@ -82,20 +100,29 @@ async def _call_with_retry(
                 )
                 duration_ms = int((time.monotonic() - t0) * 1000)
 
-            in_tok, out_tok, think_tok = extract_usage(response)
-            return (
-                response.choices[0].message.content,
-                in_tok,
-                out_tok,
-                think_tok,
-                duration_ms,
-            )
+                in_tok, out_tok, think_tok = extract_usage(response)
+                return (
+                    response.choices[0].message.content,
+                    in_tok,
+                    out_tok,
+                    think_tok,
+                    duration_ms,
+                )
 
-        except RateLimitError:
-            if attempt == retries - 1:
-                raise
-            wait = (2 ** attempt) + random.uniform(0, 1)
-            await asyncio.sleep(wait)
+            except RateLimitError:
+                if attempt == retries - 1:
+                    raise
+                wait = min(60.0, (2 ** attempt) * 5) + random.uniform(0, 2)
+                await asyncio.sleep(wait)
+            except BadRequestError as exc:
+                if attempt == retries - 1:
+                    raise
+                _logger.warning(
+                    "Epic generation: Groq rejected model output as invalid JSON "
+                    "(attempt %d/%d): %s", attempt + 1, retries, exc,
+                )
+                wait = (2 ** attempt) + random.uniform(0, 1)
+                await asyncio.sleep(wait)
 
     return "{}", 0, 0, 0, 0
 
@@ -112,8 +139,11 @@ async def generate_epics(
 
     Returns (epics, input_tokens, output_tokens, thinking_tokens, duration_ms).
     """
-    # Semaphore created here so it belongs to the current event loop
-    semaphore = asyncio.Semaphore(5)
+    # Semaphore created here so it belongs to the current event loop.
+    # Only 1 call is ever made per invocation (no fan-out), so size doesn't
+    # gate anything today — kept at 1 to match the actual call pattern rather
+    # than implying concurrency that doesn't exist.
+    semaphore = asyncio.Semaphore(1)
 
     # Build 1-indexed mapping: "1" → actual UUID, so we never send raw UUIDs
     # to the LLM. Short integers are cheaper tokens and can't be hallucinated.
@@ -131,6 +161,9 @@ async def generate_epics(
     content, in_tok, out_tok, think_tok, dur_ms = await _call_with_retry(prompt, semaphore)
 
     try:
+        # content can be None (model routed answer into a hidden reasoning
+        # field) — json.loads(None) raises TypeError, not JSONDecodeError,
+        # so both are caught here.
         parsed = json.loads(content)
         # Accept both bare array and {"epics": [...]} wrapper
         if isinstance(parsed, list):
@@ -139,22 +172,36 @@ async def generate_epics(
             epics = next((v for v in parsed.values() if isinstance(v, list)), [])
         else:
             epics = []
-    except json.JSONDecodeError as exc:
+    except (json.JSONDecodeError, TypeError) as exc:
         _logger.warning("Epic generator JSON parse failed: %s. Returning empty epic list.", exc)
         epics = []
 
     # Resolve integer indices back to actual UUIDs; drop any out-of-range indices.
+    # requirement_ids is requested as a comma-separated string (e.g. "1,3,7") —
+    # gpt-oss on Groq reliably mangled JSON arrays of many small integers under
+    # json_object mode (digits merged with no delimiter, e.g. [5282931266215]).
+    # A regex extracts every digit run regardless of whether the model actually
+    # followed the string format or still returned a list. A token longer than
+    # the largest real index is corrupted-merge output, not a valid one — skip
+    # it rather than feeding a garbage lookup key to idx_to_id.
+    max_index_digits = len(str(len(requirements)))
     all_assigned_ids: set[str] = set()
     for epic in epics:
+        tokens = re.findall(r"\d+", str(epic.get("requirement_ids", "")))
         resolved: list[str] = []
-        for raw_idx in epic.get("requirement_ids", []):
-            key = str(raw_idx).strip()
-            actual_id = idx_to_id.get(key)
+        for token in tokens:
+            if len(token) > max_index_digits:
+                _logger.warning(
+                    "Epic '%s': index %r looks like merged/corrupted digits — skipped",
+                    epic.get("title"), token,
+                )
+                continue
+            actual_id = idx_to_id.get(token)
             if actual_id:
                 resolved.append(actual_id)
                 all_assigned_ids.add(actual_id)
             else:
-                _logger.warning("Epic '%s': unrecognised index %r — skipped", epic.get("title"), raw_idx)
+                _logger.warning("Epic '%s': unrecognised index %r — skipped", epic.get("title"), token)
         epic["requirement_ids"] = resolved
 
     # Coverage check — every requirement must appear in exactly one epic.

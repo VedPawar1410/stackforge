@@ -295,6 +295,8 @@ class Stage4MetricsResponse(BaseModel):
     tokens_available: bool = True        # Groq API exposes real token counts
     actual_input_tokens: int = 0
     actual_output_tokens: int = 0
+    representative: bool = True          # False if a non-priced (e.g. local) model was used
+    models_used: list[str] = []
     task_breakdown: list[dict]
 
 

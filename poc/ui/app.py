@@ -20,7 +20,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 import httpx
 import streamlit as st
 
-API_BASE = "http://localhost:8000"
+API_BASE = "http://127.0.0.1:8000"
 
 # ─── Page config ─────────────────────────────────────────────────────────────
 
@@ -2408,6 +2408,15 @@ with tab_stage4:
             st.markdown('<div class="sf-section-header">Execution Report</div>', unsafe_allow_html=True)
 
             s4_metrics = cached_get(f"/projects/{project_id}/stage4-metrics") or {}
+
+            if s4_metrics and not s4_metrics.get("representative", True):
+                models_str = ", ".join(s4_metrics.get("models_used", [])) or "unknown"
+                st.warning(
+                    f"⚠️ Non-representative run — used {models_str}, which isn't mapped "
+                    "to an Anthropic pricing tier. Token/cost figures below are real "
+                    "but should not be used for the savings comparison."
+                )
+
             total_dur_s = round(s4_metrics.get("total_duration_ms", 0) / 1000, 1)
             avg_dur_s   = round(s4_metrics.get("avg_duration_ms", 0) / 1000, 1)
             s4_comp     = s4_metrics.get("completed", 0)

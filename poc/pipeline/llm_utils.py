@@ -12,12 +12,19 @@ from typing import Any
 
 from openai import AsyncOpenAI, RateLimitError
 
-from config import GROQ_API_KEY, LLM_BASE_URL
+from config import LLM_API_KEY, LLM_BASE_URL
 
 
 def get_llm_client() -> AsyncOpenAI:
-    """Return a configured AsyncOpenAI client for the current provider."""
-    return AsyncOpenAI(base_url=LLM_BASE_URL, api_key=GROQ_API_KEY)
+    """Return a configured AsyncOpenAI client for the current provider.
+
+    max_retries=0 disables the SDK's own built-in retry-on-429 behavior.
+    Without this, every call_with_retry/_summarize_with_retry attempt could
+    silently fire up to 3 real HTTP requests (1 + 2 SDK retries) against
+    Groq's rate limit before our own backoff logic ever sees a failure —
+    the two retry layers stack instead of one owning the backoff.
+    """
+    return AsyncOpenAI(base_url=LLM_BASE_URL, api_key=LLM_API_KEY, max_retries=0)
 
 
 def extract_usage(response: Any) -> tuple[int, int, int]:
