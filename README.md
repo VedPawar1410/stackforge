@@ -20,6 +20,25 @@ Postgres). A hosted demo comes with the successor product (see [Successor](#succ
 Source: [`poc/reports/`](poc/reports/README.md). How to read these numbers honestly is
 spelled out there and under [Limitations](#limitations).
 
+## Demo
+
+Screenshots of the Streamlit UI on the real MediBook run above (nothing staged). The
+sidebar tracks each pipeline stage live; the tiles reprice the recorded tokens.
+
+![Overview: stage rail and cost tiles](docs/screenshots/01-overview.png)
+
+| | |
+|---|---|
+| ![Requirements by type and SDLC topic](docs/screenshots/02-requirements.png) | ![Knowledge-base search returning the reminder requirements](docs/screenshots/03-knowledge-base.png) |
+| **Requirements**: 122 extracted, by type and SDLC topic | **Knowledge base**: "How should appointment reminders be sent?" |
+| ![Epic with user stories and acceptance criteria](docs/screenshots/04-epics-stories.png) | ![Sprint capacity chart and task breakdown](docs/screenshots/05-sprint-plan.png) |
+| **Epics and stories**: Given/When/Then criteria, points | **Sprint plan**: 9 sprints packed to a 20-point capacity |
+| ![Code drafts per task](docs/screenshots/06-code-drafts.png) | |
+| **Code drafts**: one workspace per task, files listed | |
+
+The Azure DevOps step shows as optional: see [Limitations](#limitations) for why it
+isn't demonstrated.
+
 ---
 
 ## How it works
@@ -224,6 +243,17 @@ which was verified in November 2026.
 - **Stage 4 code is only syntax-checked.** It is never executed or tested, and runs
   for one sprint by default because of free-tier rate limits.
 - **One measured run per configuration.** LLM output varies run to run.
+- **Azure DevOps push is built but not demonstrated.** `pipeline/ado_client.py` creates
+  Epics, User Stories, Iterations and Tasks over the ADO REST API (v7.1), and in June
+  2026 it ran against the company's Azure DevOps org. A new *personal* ADO organisation
+  now has to be linked to an Azure subscription, which needs a card even for the free
+  trial, and the 30-day trial would lapse long before anyone looks at this repo. So the
+  step stays optional; it's three `.env` values (`ADO_ORG`, `ADO_PROJECT`, `ADO_PAT`)
+  away from working.
+- **Project-wide constraints leak into story criteria.** Stage 2 adds cross-cutting
+  constraints to every story prompt so stories respect them. Side effect: some acceptance
+  criteria restate project terms instead of testing the story (a booking story with
+  "Given the API access deadline of 10 February 2026...").
 - **Gemini is only partly working.** Summarisation runs, but requirement extraction
   fails: `gemini-3.5-flash` and `gemini-flash-latest` both returned a markdown list
   instead of JSON despite `response_format: json_object`, so Stage 1 can't finish on
@@ -322,6 +352,9 @@ the result against a checklist built from the source documents.
 | 6.7 | 26 tests, the LLM faked in the API tests | Cheap, deterministic checks of the plumbing (4.5) |
 | 6.8 | A 46-item checklist and a report builder; prices updated and dated | Quality and cost judged together, from recorded tokens (4.2) |
 | 6.9 | Removed a 5 MB unrelated `prompts.csv` | Not part of the project |
+| 6.10 | Dark "mission control" UI: live stage rail, cost tiles from a shared `cost_summary` | A demo should show the pipeline and its cost at a glance; one pricing function so UI and reports agree |
+| 6.11 | Rewrote UI copy that claimed more than the code does ("Claude Code agents", "hybrid search") | The UI is part of the claim too (4.12) |
+| 6.12 | Left the Azure DevOps push undemonstrated | A personal ADO org now needs an Azure subscription; a 30-day trial isn't worth it for a screenshot |
 
 *Known gaps I chose not to fix:* prompt caching and the Batch API (need the Anthropic
 API), Stage 4 code execution, the `run_demo.py` duplicate, the `total_tokens`

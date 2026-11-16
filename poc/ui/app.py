@@ -34,22 +34,22 @@ st.set_page_config(
 # ─── Design system constants ──────────────────────────────────────────────────
 
 TYPE_META = {
-    "functional":     ("⚡", "Functional",     "blue"),
-    "non_functional": ("🔒", "Non-Functional",  "violet"),
-    "constraint":     ("📌", "Constraint",      "amber"),
-    "assumption":     ("💭", "Assumption",      "slate"),
+    "functional":     ("", "Functional",     "blue"),
+    "non_functional": ("", "Non-Functional",  "violet"),
+    "constraint":     ("", "Constraint",      "amber"),
+    "assumption":     ("", "Assumption",      "slate"),
 }
 TYPE_ORDER = ["functional", "non_functional", "constraint", "assumption"]
 
 SDLC_META = {
-    "requirements":     ("📋", "Requirements",    "#818cf8", "blue"),
-    "design":           ("🎨", "Design",           "#a78bfa", "violet"),
-    "technical":        ("⚙️",  "Technical",        "#22d3ee", "blue"),
-    "timeline":         ("📅", "Timeline",         "#34d399", "teal"),
-    "budget":           ("💰", "Budget",           "#fb923c", "amber"),
-    "testing":          ("🧪", "Testing",          "#f87171", "rose"),
-    "integrations":     ("🔗", "Integrations",     "#60a5fa", "blue"),
-    "team_and_process": ("👥", "Team & Process",   "#94a3b8", "slate"),
+    "requirements":     ("", "Requirements",    "#818cf8", "blue"),
+    "design":           ("", "Design",           "#a78bfa", "violet"),
+    "technical":        ("",  "Technical",        "#22d3ee", "blue"),
+    "timeline":         ("", "Timeline",         "#34d399", "teal"),
+    "budget":           ("", "Budget",           "#fb923c", "amber"),
+    "testing":          ("", "Testing",          "#f87171", "rose"),
+    "integrations":     ("", "Integrations",     "#60a5fa", "blue"),
+    "team_and_process": ("", "Team & Process",   "#94a3b8", "slate"),
 }
 SDLC_ORDER = [
     "requirements", "design", "technical", "timeline",
@@ -512,7 +512,7 @@ def active_project_guard() -> str | None:
     if not pid:
         st.markdown(
             '<div class="sf-card" style="text-align:center;padding:32px;">'
-            '<div style="font-size:1.5rem;margin-bottom:8px;">🏗️</div>'
+            '<div style="font-size:1.5rem;margin-bottom:8px;"></div>'
             '<div class="sf-card-title">No project selected</div>'
             '<div class="sf-card-desc" style="text-align:center;">'
             'Go to the <strong>Setup</strong> tab to select or create a project first.'
@@ -847,7 +847,7 @@ def render_stage_rail():
         kb_state = "done" if reqs else "idle"
         st.markdown(f'<div class="sf-rail-label">Pipeline</div>{rail}'
                     f'<div class="sf-rail-label">Always on</div>'
-                    f'{_step_html(kb_state, "Knowledge base", "Keyword + semantic search", 7)}',
+                    f'{_step_html(kb_state, "Knowledge base", "Keyword search · semantic with Pinecone", 7)}',
                     unsafe_allow_html=True)
         if st.button("Refresh status", use_container_width=True):
             invalidate_project_cache(pid)
@@ -977,7 +977,7 @@ with tab_setup:
                             st.session_state["project_name"] = name
                             st.rerun()
                     with btn_cols[1]:
-                        if st.button("🗑", key=f"btn_delete_{pid_str}",
+                        if st.button("", key=f"btn_delete_{pid_str}",
                                      use_container_width=True, help="Delete project"):
                             st.session_state[confirm_key] = True
                             st.rerun()
@@ -1065,7 +1065,7 @@ with tab_upload:
         st.markdown("</div>", unsafe_allow_html=True)
 
         if uploaded:
-            if st.button("🚀  Run AI Pipeline", key="btn_ingest", type="primary"):
+            if st.button("Run AI Pipeline", key="btn_ingest", type="primary"):
                 queued_count = 0
                 upload_fail_names = []
                 progress_ph = st.empty()
@@ -1326,7 +1326,7 @@ with tab_review:
         if not reqs:
             st.markdown(
                 '<div class="sf-card" style="text-align:center;padding:32px;">'
-                '<div style="font-size:1.4rem;margin-bottom:8px;">📋</div>'
+                '<div style="font-size:1.4rem;margin-bottom:8px;"></div>'
                 '<div class="sf-card-title">No requirements yet</div>'
                 '<div class="sf-card-desc" style="text-align:center;">Upload documents and run the pipeline to extract requirements.</div>'
                 '</div>',
@@ -1440,7 +1440,7 @@ with tab_review:
             _, export_col = st.columns([5, 1])
             with export_col:
                 st.download_button(
-                    "⬇️ Export JSON",
+                    "Export JSON",
                     data=_json.dumps(
                         [{k: str(v) if not isinstance(v, (str, int, float, bool, type(None))) else v
                           for k, v in r.items()} for r in reqs],
@@ -1467,7 +1467,7 @@ with tab_docs:
         if not existing:
             st.markdown(
                 '<div class="sf-card" style="text-align:center;padding:32px;">'
-                '<div style="font-size:1.4rem;margin-bottom:8px;">📄</div>'
+                '<div style="font-size:1.4rem;margin-bottom:8px;"></div>'
                 '<div class="sf-card-title">No documents generated yet</div>'
                 '<div class="sf-card-desc" style="text-align:center;">Upload documents and run the pipeline — SDLC docs are created automatically.</div>'
                 '</div>',
@@ -1560,7 +1560,7 @@ with tab_docs:
             if selected_topic == "design":
                 st.divider()
                 st.markdown(
-                    '<div class="sf-card-title">🎨 Generate Designs in Google Stitch</div>',
+                    '<div class="sf-card-title">Generate Designs in Google Stitch</div>',
                     unsafe_allow_html=True,
                 )
                 stitch_data = cached_get(f"/projects/{project_id}/stitch") or {}
@@ -1568,7 +1568,7 @@ with tab_docs:
 
                 if stitch_status == "not_generated":
                     st.caption("Generate high-fidelity UI screens from the design requirements using Google Stitch.")
-                    if st.button("🎨  Generate in Stitch", key="btn_stitch_generate", type="primary"):
+                    if st.button("Generate in Stitch", key="btn_stitch_generate", type="primary"):
                         result = api_post(f"/projects/{project_id}/stitch/generate")
                         if result:
                             invalidate_cache(f"/projects/{project_id}/stitch")
@@ -1583,7 +1583,7 @@ with tab_docs:
                         '</div>',
                         unsafe_allow_html=True,
                     )
-                    if st.button("🔄  Refresh", key="btn_stitch_refresh"):
+                    if st.button("Refresh", key="btn_stitch_refresh"):
                         invalidate_cache(f"/projects/{project_id}/stitch")
                         st.rerun()
 
@@ -1615,7 +1615,7 @@ with tab_docs:
                             )
                     if gen_at:
                         st.caption(f"Generated: {gen_at[:19].replace('T', ' ')} UTC")
-                    if st.button("🔄  Regenerate", key="btn_stitch_regen"):
+                    if st.button("Regenerate", key="btn_stitch_regen"):
                         result = api_post(f"/projects/{project_id}/stitch/generate")
                         if result:
                             invalidate_cache(f"/projects/{project_id}/stitch")
@@ -1626,7 +1626,7 @@ with tab_docs:
                     err = stitch_data.get("error", "Unknown error")
                     st.error(f"Stitch generation failed: {err}")
                     st.caption("Check that STITCH_API_KEY is set in poc/.env and Node.js is installed.")
-                    if st.button("🔄  Retry", key="btn_stitch_retry", type="primary"):
+                    if st.button("Retry", key="btn_stitch_retry", type="primary"):
                         result = api_post(f"/projects/{project_id}/stitch/generate")
                         if result:
                             invalidate_cache(f"/projects/{project_id}/stitch")
@@ -1701,7 +1701,7 @@ with tab_clarify:
                     st.markdown("<div style='margin-bottom:4px;'></div>", unsafe_allow_html=True)
 
                 if answered_qs:
-                    with st.expander(f"✅  Answered ({len(answered_qs)})", expanded=False):
+                    with st.expander(f"Answered ({len(answered_qs)})", expanded=False):
                         for q in answered_qs:
                             st.markdown(
                                 f'<div class="sf-card" style="padding:12px 16px;margin-bottom:6px;">'
@@ -1715,7 +1715,8 @@ with tab_clarify:
 
         with col_query:
             st.markdown('<div class="sf-section-header">Ask the Knowledge Base</div>', unsafe_allow_html=True)
-            st.caption("Hybrid BM25 + semantic search across requirements, documents, and answered clarifications.")
+            st.caption("BM25 keyword search across requirements, document summaries and answered clarifications, "
+                       "plus semantic search when PINECONE_API_KEY is set.")
 
             query_text = st.text_input(
                 "Query",
@@ -1723,7 +1724,7 @@ with tab_clarify:
                 key="rag_query",
                 label_visibility="collapsed",
             )
-            if st.button("🔍  Search", key="btn_query", type="primary", use_container_width=True) and query_text:
+            if st.button("Search", key="btn_query", type="primary", use_container_width=True) and query_text:
                 with st.spinner("Searching…"):
                     results = api_post(f"/projects/{project_id}/query", json={"query": query_text})
                 if results:
@@ -1734,9 +1735,9 @@ with tab_clarify:
                         unsafe_allow_html=True,
                     )
                     ct_labels = {
-                        "chunk_summary": ("📄", "Doc Summary", "violet"),
-                        "requirement":   ("📌", "Requirement", "blue"),
-                        "clarification": ("💬", "Clarification", "teal"),
+                        "chunk_summary": ("", "Doc Summary", "violet"),
+                        "requirement":   ("", "Requirement", "blue"),
+                        "clarification": ("", "Clarification", "teal"),
                     }
                     for i, chunk in enumerate(results, 1):
                         ct = chunk["content_type"]
@@ -1817,7 +1818,7 @@ with tab_epics:
         with top_right:
             if s2_status in ("idle", "failed"):
                 st.markdown("<br>", unsafe_allow_html=True)
-                if st.button("⚡  Generate Epics & Stories", key="btn_generate_epics", type="primary", use_container_width=True):
+                if st.button("Generate Epics & Stories", key="btn_generate_epics", type="primary", use_container_width=True):
                     result = api_post(f"/projects/{project_id}/generate-epics")
                     if result:
                         invalidate_cache(
@@ -1837,7 +1838,7 @@ with tab_epics:
                     '</div>',
                     unsafe_allow_html=True,
                 )
-                if st.button("🔄 Refresh", key="btn_s2_refresh"):
+                if st.button("Refresh", key="btn_s2_refresh"):
                     invalidate_cache(f"/projects/{project_id}/stage2-status")
                     st.rerun()
             elif s2_status == "ready":
@@ -1857,7 +1858,7 @@ with tab_epics:
                 _ap_key = f"_ado_area_path_{project_id}"
                 if _ap_key not in st.session_state:
                     st.session_state[_ap_key] = st.session_state.get("project_name", "")
-                with st.expander("⚙️ ADO Settings", expanded=False):
+                with st.expander("ADO Settings", expanded=False):
                     st.text_input(
                         "Area path (sub-area under your ADO project)",
                         key=_ap_key,
@@ -1873,7 +1874,7 @@ with tab_epics:
                     )
                 _area_path = st.session_state.get(_ap_key, "")
 
-                ado_label = "✓ Pushed to ADO" if ado_pushed else "🚀  Push to Azure DevOps"
+                ado_label = "✓ Pushed to ADO" if ado_pushed else "Push to Azure DevOps"
                 ado_type = "secondary" if ado_pushed else "primary"
                 _push_url = f"/projects/{project_id}/push-to-ado"
                 if _area_path:
@@ -1910,7 +1911,7 @@ with tab_epics:
         if s2_status == "idle":
             st.markdown(
                 '<div class="sf-card" style="text-align:center;padding:40px;">'
-                '<div style="font-size:2rem;margin-bottom:10px;">🗂️</div>'
+                '<div style="font-size:2rem;margin-bottom:10px;"></div>'
                 '<div class="sf-card-title">Stage 2 not started</div>'
                 '<div class="sf-card-desc" style="text-align:center;">'
                 'Generate Epics & Stories from your extracted requirements.<br>'
@@ -1949,7 +1950,7 @@ with tab_epics:
                         '<span class="sf-badge sf-badge-slate">Not pushed</span>'
                     )
                     sc = epic.get("story_count", 0)
-                    expander_label = f"📦  {epic['title']}  ·  {sc} {'story' if sc == 1 else 'stories'}"
+                    expander_label = f"{epic['title']}  ·  {sc} {'story' if sc == 1 else 'stories'}"
 
                     with st.expander(expander_label, expanded=False):
                         st.markdown(
@@ -2017,12 +2018,12 @@ with tab_epics:
 # ═══════════════════════════════════════════════════════════════════════════════
 
 TASK_TYPE_META = {
-    "backend":       ("⚙️",  "#818cf8"),
-    "frontend":      ("🖥️",  "#a78bfa"),
-    "testing":       ("🧪", "#f87171"),
-    "devops":        ("🔧", "#34d399"),
-    "design":        ("🎨", "#fb923c"),
-    "documentation": ("📝", "#94a3b8"),
+    "backend":       ("",  "#818cf8"),
+    "frontend":      ("",  "#a78bfa"),
+    "testing":       ("", "#f87171"),
+    "devops":        ("", "#34d399"),
+    "design":        ("", "#fb923c"),
+    "documentation": ("", "#94a3b8"),
 }
 
 with tab_sprints:
@@ -2042,7 +2043,7 @@ with tab_sprints:
         # ── Action bar ────────────────────────────────────────────────────────
         top_left, top_right = st.columns([3, 1])
         with top_right:
-            with st.expander("⚙️ Config"):
+            with st.expander("Config"):
                 sprint_cap = st.slider(
                     "Sprint capacity (pts)", min_value=5, max_value=60,
                     value=20, step=5,
@@ -2050,9 +2051,9 @@ with tab_sprints:
                 )
 
             if s3_status in ("idle", "failed"):
-                btn_label = "⚡ Generate Sprint Plan"
+                btn_label = "Generate Sprint Plan"
             else:
-                btn_label = "🔄 Regenerate"
+                btn_label = "Regenerate"
 
             if st.button(btn_label, key="btn_s3_generate", type="primary", use_container_width=True):
                 result = api_post(
@@ -2115,7 +2116,7 @@ with tab_sprints:
             st.markdown(
                 '<div style="margin-top:12px;padding:12px 16px;background:#161b22;'
                 'border:1px solid #30363d;border-radius:10px;color:#818cf8;font-size:0.85rem;">'
-                '⏳ Generating sprint plan and task breakdown in background… click Refresh to check progress.'
+                'Generating sprint plan and task breakdown in background… click Refresh to check progress.'
                 '</div>',
                 unsafe_allow_html=True,
             )
@@ -2212,7 +2213,7 @@ with tab_sprints:
                         task_chips = ""
                         for task in tasks:
                             tt = task.get("task_type", "backend")
-                            icon, color = TASK_TYPE_META.get(tt, ("⚙️", "#818cf8"))
+                            icon, color = TASK_TYPE_META.get(tt, ("", "#818cf8"))
                             hrs = task.get("estimated_hours", 0)
                             hrs_str = f"{int(hrs)}h" if hrs == int(hrs) else f"{hrs}h"
                             task_chips += (
@@ -2265,7 +2266,7 @@ with tab_sprints:
             _s3_ap_key = f"_s3_ado_area_path_{project_id}"
             if _s3_ap_key not in st.session_state:
                 st.session_state[_s3_ap_key] = st.session_state.get("project_name", "")
-            with st.expander("⚙️ ADO Settings", expanded=False):
+            with st.expander("ADO Settings", expanded=False):
                 st.text_input(
                     "Area path (sub-area under your ADO project)",
                     key=_s3_ap_key,
@@ -2286,7 +2287,7 @@ with tab_sprints:
                 )
             _s3_area_path = st.session_state.get(_s3_ap_key, "")
 
-            _s3_ado_label = "✓ Pushed to ADO" if s3_ado_pushed else "🚀  Push Sprints & Tasks to Azure DevOps"
+            _s3_ado_label = "✓ Pushed to ADO" if s3_ado_pushed else "Push Sprints & Tasks to Azure DevOps"
             _s3_ado_type = "secondary" if s3_ado_pushed else "primary"
             _s3_push_url = f"/projects/{project_id}/push-sprints-to-ado"
             if _s3_area_path:
@@ -2341,7 +2342,8 @@ SESSION_STATUS_COLOR = {
 
 with tab_stage4:
     st.markdown('<div class="sf-section-header">AI-Assisted Development</div>', unsafe_allow_html=True)
-    st.caption("Claude Code agents implement each task in an isolated workspace. Phase 1: Python runner · Phase 2: daemon pattern.")
+    st.caption("The capable model drafts code for each task in its own workspace, from the task, its story "
+               "and any design files. Drafts are syntax-checked, not run.")
 
     project_id = st.session_state.get("project_id")
     if not project_id:
@@ -2358,7 +2360,7 @@ with tab_stage4:
         top_left, top_right = st.columns([3, 1])
 
         with top_right:
-            with st.expander("⚙️ Config"):
+            with st.expander("Config"):
                 # Sprint selector: fetch sprint list if Stage 3 is ready
                 sprints_list = cached_get(f"/projects/{project_id}/sprints") or []
                 sprint_options = {"All Sprints": None}
@@ -2373,10 +2375,10 @@ with tab_stage4:
 
                 max_par = st.slider(
                     "Max parallel agents", min_value=1, max_value=4, value=2,
-                    help="Concurrent Claude Code processes. Keep ≤2 to stay within Anthropic rate limits.",
+                    help="Tasks drafted at once. Keep at 1 on free-tier providers to stay within rate limits.",
                 )
 
-            btn_label = "⚡ Run Stage 4" if s4_status in ("idle", "failed") else "🔄 Re-run Stage 4"
+            btn_label = "Run Stage 4" if s4_status in ("idle", "failed") else "Re-run Stage 4"
             if st.button(btn_label, key="btn_s4_run", type="primary", use_container_width=True):
                 url = f"/projects/{project_id}/run-stage4?max_parallel={max_par}"
                 if selected_sprint_id:
@@ -2438,7 +2440,7 @@ with tab_stage4:
             st.markdown(
                 f'<div style="margin-top:12px;padding:12px 16px;background:#161b22;'
                 f'border:1px solid #30363d;border-radius:10px;color:#818cf8;font-size:0.85rem;">'
-                f'⏳ Claude Code agents running… {done_of} tasks complete. '
+                f'Drafting code… {done_of} tasks complete. '
                 f'Click Refresh to check progress.'
                 f'</div>',
                 unsafe_allow_html=True,
@@ -2461,7 +2463,7 @@ with tab_stage4:
                 dur_s       = round(dur_ms / 1000, 1)
                 file_count  = sess.get("file_count", 0)
                 tt          = sess.get("task_type", "backend")
-                type_icon, type_color = TASK_TYPE_META.get(tt, ("⚙️", "#818cf8"))
+                type_icon, type_color = TASK_TYPE_META.get(tt, ("", "#818cf8"))
 
                 expander_label = (
                     f"{type_icon} {sess['task_title']}  "
@@ -2495,7 +2497,7 @@ with tab_stage4:
                         detail = cached_get(f"/projects/{project_id}/task-sessions/{task_id}")
 
                         if detail and detail.get("session_summary"):
-                            st.markdown("**Claude's summary:**")
+                            st.markdown("**Model summary:**")
                             st.markdown(
                                 f'<div style="background:#161b22;border:1px solid #30363d;'
                                 f'border-radius:8px;padding:12px 16px;font-size:0.82rem;'
@@ -2515,7 +2517,7 @@ with tab_stage4:
                                     f'padding:4px 8px;background:rgba(255,255,255,0.02);'
                                     f'border-radius:4px;margin-bottom:2px;">'
                                     f'  <span style="font-family:monospace;font-size:0.78rem;color:#a78bfa;">'
-                                    f'    📄 {f_info["path"]}'
+                                    f'    {f_info["path"]}'
                                     f'  </span>'
                                     f'  <span style="font-size:0.72rem;color:#6e7681;">{size_str}</span>'
                                     f'</div>',
