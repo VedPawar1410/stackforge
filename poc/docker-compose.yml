@@ -12,7 +12,9 @@ services:
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: stackforge
     ports:
-      - "5432:5432"
+      # Already running Postgres locally? STACKFORGE_DB_PORT=5433 docker compose up -d
+      # and use that port in DATABASE_URL.
+      - "${STACKFORGE_DB_PORT:-5432}:5432"
     volumes:
       - stackforge-pgdata:/var/lib/postgresql/data
     healthcheck:
